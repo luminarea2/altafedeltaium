@@ -51,9 +51,8 @@ import com.example.altafedeltium.data.model.Order
 import com.example.altafedeltium.ui.viewmodel.HomeViewModel
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.example.altafedeltium.ui.theme.WarmOrangeGradientLight
 
-private val ProfileAccentColor = Color(0xFFF57C4B)
+private val ProfileAccentColor = Color(0xFFFF9800)
 
 private enum class ProfileSection(val title: String) {
     PERSONAL_DATA("I miei dati"),
@@ -74,7 +73,7 @@ fun ProfileScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(WarmOrangeGradientLight),
+            .background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -356,7 +355,7 @@ private fun PersonalDataSection(
             )
 
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF5EC)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Row(
@@ -501,7 +500,7 @@ private fun AddressEditorCard(
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7F0)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f)),
         shape = RoundedCornerShape(18.dp)
     ) {
         Column(

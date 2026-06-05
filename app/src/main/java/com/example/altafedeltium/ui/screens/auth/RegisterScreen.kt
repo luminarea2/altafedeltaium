@@ -15,7 +15,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -40,12 +39,23 @@ fun RegisterScreen(
         Text(text = "Compila i campi per registrarti", style = MaterialTheme.typography.bodyMedium)
 
         OutlinedTextField(
-            value = uiState.name,
-            onValueChange = viewModel::onNameChanged,
+            value = uiState.firstName,
+            onValueChange = viewModel::onFirstNameChanged,
             label = { Text("Nome") },
-            isError = uiState.nameError != null,
+            isError = uiState.firstNameError != null,
             supportingText = {
-                uiState.nameError?.let { Text(it) }
+                uiState.firstNameError?.let { Text(it) }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = uiState.lastName,
+            onValueChange = viewModel::onLastNameChanged,
+            label = { Text("Cognome") },
+            isError = uiState.lastNameError != null,
+            supportingText = {
+                uiState.lastNameError?.let { Text(it) }
             },
             modifier = Modifier.fillMaxWidth()
         )
@@ -58,8 +68,7 @@ fun RegisterScreen(
             supportingText = {
                 uiState.emailError?.let { Text(it) }
             },
-            modifier = Modifier.fillMaxWidth(),
-
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(

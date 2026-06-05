@@ -5,11 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 
 data class RegisterUiState(
-    val name: String = "",
+    val firstName: String = "",
+    val lastName: String = "",
     val email: String = "",
     val password: String = "",
     val confirmPassword: String = "",
-    val nameError: String? = null,
+    val firstNameError: String? = null,
+    val lastNameError: String? = null,
     val emailError: String? = null,
     val passwordError: String? = null,
     val confirmPasswordError: String? = null,
@@ -20,8 +22,12 @@ class RegisterViewModel : ViewModel() {
     private val _uiState = mutableStateOf(RegisterUiState())
     val uiState: State<RegisterUiState> = _uiState
 
-    fun onNameChanged(value: String) {
-        _uiState.value = _uiState.value.copy(name = value, nameError = null, formError = null)
+    fun onFirstNameChanged(value: String) {
+        _uiState.value = _uiState.value.copy(firstName = value, firstNameError = null, formError = null)
+    }
+
+    fun onLastNameChanged(value: String) {
+        _uiState.value = _uiState.value.copy(lastName = value, lastNameError = null, formError = null)
     }
 
     fun onEmailChanged(value: String) {
@@ -38,7 +44,8 @@ class RegisterViewModel : ViewModel() {
 
     fun submit(): Boolean {
         val current = _uiState.value
-        val nameError = if (current.name.isBlank()) "Inserisci il nome" else null
+        val firstNameError = if (current.firstName.isBlank()) "Inserisci il nome" else null
+        val lastNameError = if (current.lastName.isBlank()) "Inserisci il cognome" else null
         val emailError = validateEmail(current.email)
         val passwordError = validatePassword(current.password)
         val confirmPasswordError = when {
@@ -47,18 +54,27 @@ class RegisterViewModel : ViewModel() {
             else -> null
         }
 
-        _uiState.value = current.copy(
-            nameError = nameError,
-            emailError = emailError,
-            passwordError = passwordError,
-            confirmPasswordError = confirmPasswordError,
-            formError = if (nameError != null || emailError != null || passwordError != null || confirmPasswordError != null) {
-                "Controlla i campi evidenziati"
-            } else {
-                null
-            }
-        )
+        if (firstNameError != null || lastNameError != null || emailError != null || passwordError != null || confirmPasswordError != null) {
+            _uiState.value = current.copy(
+                firstNameError = firstNameError,
+                lastNameError = lastNameError,
+                emailError = emailError,
+                passwordError = passwordError,
+                confirmPasswordError = confirmPasswordError,
+                formError = "Controlla i campi evidenziati"
+            )
+            return false
+        }
 
-        return nameError == null && emailError == null && passwordError == null && confirmPasswordError == null
+        val result = AuthSessionStore.register(current.firstName, current.lastName, current.email, current.password)
+        
+        return if (result.isSuccess) {
+            true
+        } else {
+            _uiState.value = current.copy(
+                formError = result.exceptionOrNull()?.message ?: "Errore durante la registrazione"
+            )
+            false
+        }
     }
 }

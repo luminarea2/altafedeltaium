@@ -1,6 +1,7 @@
 // Video composables have been consolidated into ApplicationScreen.kt
 package com.example.altafedeltium.ui.screens.apply
 
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition

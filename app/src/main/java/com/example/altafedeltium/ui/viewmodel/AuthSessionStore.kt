@@ -5,10 +5,13 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 data class AuthUser(
-    val fullName: String,
+    val firstName: String,
+    val lastName: String,
     val email: String,
     val password: String
-)
+) {
+    val fullName: String get() = "$firstName $lastName"
+}
 
 object AuthSessionStore {
     private const val PREFS_NAME = "auth_session_store"
@@ -16,7 +19,8 @@ object AuthSessionStore {
     private const val KEY_CURRENT_USER_EMAIL = "current_user_email"
 
     private val defaultUser = AuthUser(
-        fullName = "Paolo Cortellesi",
+        firstName = "Paolo",
+        lastName = "Cortellesi",
         email = "paolo.cortellesi@email.it",
         password = "password123"
     )
@@ -38,14 +42,15 @@ object AuthSessionStore {
     var currentUser: AuthUser? = null
         private set
 
-    fun register(fullName: String, email: String, password: String): Result<AuthUser> {
+    fun register(firstName: String, lastName: String, email: String, password: String): Result<AuthUser> {
         val normalizedEmail = email.trim().lowercase()
         if (users.any { it.email.equals(normalizedEmail, ignoreCase = true) }) {
             return Result.failure(IllegalArgumentException("Esiste gia un account con questa email"))
         }
 
         val user = AuthUser(
-            fullName = fullName.trim(),
+            firstName = firstName.trim(),
+            lastName = lastName.trim(),
             email = normalizedEmail,
             password = password
         )
@@ -80,11 +85,12 @@ object AuthSessionStore {
             val jsonArray = JSONArray(savedUsersJson)
             for (i in 0 until jsonArray.length()) {
                 val item = jsonArray.optJSONObject(i) ?: continue
-                val fullName = item.optString("fullName").trim()
+                val firstName = item.optString("firstName").trim()
+                val lastName = item.optString("lastName").trim()
                 val email = item.optString("email").trim().lowercase()
                 val password = item.optString("password")
-                if (fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
-                    users.add(AuthUser(fullName = fullName, email = email, password = password))
+                if (firstName.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
+                    users.add(AuthUser(firstName = firstName, lastName = lastName, email = email, password = password))
                 }
             }
         }
@@ -105,7 +111,8 @@ object AuthSessionStore {
         users.forEach { user ->
             usersArray.put(
                 JSONObject()
-                    .put("fullName", user.fullName)
+                    .put("firstName", user.firstName)
+                    .put("lastName", user.lastName)
                     .put("email", user.email)
                     .put("password", user.password)
             )

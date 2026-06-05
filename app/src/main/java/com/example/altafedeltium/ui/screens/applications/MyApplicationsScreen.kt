@@ -226,8 +226,8 @@ private fun statusVisuals(status: ApplicationStatus): StatusVisuals {
             icon = Icons.AutoMirrored.Filled.Send
         )
         ApplicationStatus.IN_REVISIONE -> StatusVisuals(
-            backgroundColor = Color(0xFFFFF8E1),
-            iconTint = Color(0xFFF57F17),
+            backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+            iconTint = MaterialTheme.colorScheme.primary,
             icon = Icons.Default.HourglassEmpty
         )
         ApplicationStatus.CONTATTATO -> StatusVisuals(

@@ -4,9 +4,31 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
-private val LightColors = lightColorScheme()
-private val DarkColors = darkColorScheme()
+private val DarkColors = darkColorScheme(
+    primary = Orange80,
+    onPrimary = Color(0xFF4D2600),
+    secondary = OrangeGrey80,
+    tertiary = Pink80
+)
+
+private val LightColors = lightColorScheme(
+    primary = OrangePrimary,
+    onPrimary = OrangeOnPrimary,
+    primaryContainer = OrangePrimaryContainer,
+    onPrimaryContainer = OrangeOnPrimaryContainer,
+    secondary = OrangeSecondary,
+    onSecondary = OrangeOnSecondary,
+    secondaryContainer = OrangeSecondaryContainer,
+    onSecondaryContainer = OrangeOnSecondaryContainer,
+    tertiary = OrangeTertiary,
+    onTertiary = OrangeOnTertiary,
+    background = OrangeBackground,
+    surface = OrangeSurface,
+    onBackground = Color(0xFF201A15),
+    onSurface = Color(0xFF201A15),
+)
 
 @Composable
 fun AltafedeltiumTheme(
@@ -18,4 +40,3 @@ fun AltafedeltiumTheme(
         content = content
     )
 }
-

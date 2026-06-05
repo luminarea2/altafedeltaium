@@ -23,8 +23,23 @@ data class SupermarketOption(
     val etaMinutes: Int,
     val isAvailable: Boolean = true,
     val isRecommended: Boolean = false,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val availableDays: List<String> = emptyList(),
     val deliveryZones: List<String> = emptyList(),
     val recommendedZones: List<String> = emptyList()
+)
+
+enum class SupermarketDistanceBand {
+    GREEN, WHITE, RED
+}
+
+data class SupermarketChoice(
+    val supermarket: SupermarketOption,
+    val distanceKm: Double,
+    val band: SupermarketDistanceBand,
+    val isAvailable: Boolean,
+    val isRecommended: Boolean
 )
 
 data class UserProfile(
@@ -73,4 +88,3 @@ data class Order(
     val createdAt: String,
     val status: String
 )
-

@@ -31,6 +31,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -84,14 +91,28 @@ fun ProductDetailScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Image(
-                    painter = painterResource(id = product.imageRes),
-                    contentDescription = product.name,
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp),
-                    contentScale = ContentScale.Crop
-                )
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (product.icon != null) {
+                        Icon(
+                            imageVector = product.icon,
+                            contentDescription = product.name,
+                            modifier = Modifier.size(120.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    } else if (product.imageRes != null) {
+                        Image(
+                            painter = painterResource(id = product.imageRes),
+                            contentDescription = product.name,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
             }
 
             Text(product.category, style = MaterialTheme.typography.labelLarge)
@@ -115,7 +136,7 @@ fun ProductDetailScreen(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = { onDecreaseQuantity(product.id) }) {
                             Icon(Icons.Default.Remove, contentDescription = "Riduci quantità")
