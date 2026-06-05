@@ -1,0 +1,8 @@
+# Copy this file to local.properties and adapt the values for your machine.
+# Do NOT commit local.properties because it can contain local paths and secrets.
+
+# Android SDK path (example for Windows)
+sdk.dir=C:\\Users\\YOUR_USER\\AppData\\Local\\Android\\Sdk
+
+# Google Maps API key used by the app (Maps SDK for Android must be enabled in Google Cloud)
+MAPS_API_KEY=AIzaSyYOUR_REAL_API_KEY_HERE
