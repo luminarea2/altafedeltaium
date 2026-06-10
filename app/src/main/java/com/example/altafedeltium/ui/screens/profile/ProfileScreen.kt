@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+// ...existing imports...
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -420,7 +420,8 @@ private fun AddressesSection(
                         addressToEdit = null
                         showEditor = true
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Aggiungi indirizzo")
                 }
@@ -519,11 +520,19 @@ private fun AddressEditorCard(
             OutlinedTextField(value = zipCode, onValueChange = { zipCode = it }, modifier = Modifier.fillMaxWidth(), label = { Text("CAP") })
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { showMapPicker = true }, modifier = Modifier.weight(1f)) {
+                OutlinedButton(
+                    onClick = { showMapPicker = true },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                ) {
                     Icon(Icons.Default.Place, contentDescription = null)
                     Text("  Verifica posizione su mappa")
                 }
-                OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                ) {
                     Text("Annulla")
                 }
             }
@@ -532,9 +541,12 @@ private fun AddressEditorCard(
                 Button(
                     onClick = { onSave(label, street, city, zipCode, latitude, longitude) },
                     modifier = Modifier.weight(1f),
-                    enabled = label.isNotBlank() && street.isNotBlank() && city.isNotBlank() && zipCode.isNotBlank()
+                    enabled = label.isNotBlank() && street.isNotBlank() && city.isNotBlank() && zipCode.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Salva")
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Text("Salva", color = MaterialTheme.colorScheme.onPrimary)
+                    }
                 }
                 if (latitude != null && longitude != null) {
                     Text("Entrata impostata: ${"%.5f".format(latitude)} , ${"%.5f".format(longitude)}", modifier = Modifier.weight(1f))
@@ -578,19 +590,37 @@ private fun AddressCard(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f)) {
+                OutlinedButton(
+                    onClick = onEdit,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                ) {
                     Text("Modifica")
                 }
-                OutlinedButton(onClick = onRemove, modifier = Modifier.weight(1f)) {
+                OutlinedButton(
+                    onClick = onRemove,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                ) {
                     Text("Rimuovi")
                 }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onSelectForDelivery, modifier = Modifier.weight(1f)) {
-                    Text(if (isSelectedForDelivery) "Consegna selezionata" else "Usa per consegna")
+                Button(
+                    onClick = onSelectForDelivery,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Text(if (isSelectedForDelivery) "Consegna selezionata" else "Usa per consegna", color = MaterialTheme.colorScheme.onPrimary)
+                    }
                 }
-                OutlinedButton(onClick = onSetDefault, modifier = Modifier.weight(1f)) {
+                OutlinedButton(
+                    onClick = onSetDefault,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                ) {
                     Text(if (address.isDefault) "Già predefinito" else "Rendi predefinito")
                 }
             }

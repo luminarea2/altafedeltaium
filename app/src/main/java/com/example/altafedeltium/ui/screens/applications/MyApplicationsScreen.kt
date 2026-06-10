@@ -67,8 +67,12 @@ fun MyApplicationsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(32.dp),
+                    .padding(
+                        top = innerPadding.calculateTopPadding(),
+                        start = 32.dp,
+                        end = 32.dp,
+                        bottom = innerPadding.calculateBottomPadding()
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -96,7 +100,7 @@ fun MyApplicationsScreen(
             LazyColumn(
                 contentPadding = PaddingValues(
                     top = innerPadding.calculateTopPadding() + 8.dp,
-                    bottom = 16.dp,
+                    bottom = innerPadding.calculateBottomPadding() + 16.dp,
                     start = 16.dp,
                     end = 16.dp
                 ),
@@ -142,12 +146,13 @@ private fun ApplicationStatusCard(application: JobApplication) {
                     Text(
                         text = application.position.title,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = application.position.company,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
                     )
                 }
                 Icon(
@@ -158,7 +163,10 @@ private fun ApplicationStatusCard(application: JobApplication) {
                 )
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            // Non mostrare una divider visibile su background non-surface per evitare "bordo" grigiastro
+            if (application.status == ApplicationStatus.INVIATA) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+            }
 
             // Status
             Row(

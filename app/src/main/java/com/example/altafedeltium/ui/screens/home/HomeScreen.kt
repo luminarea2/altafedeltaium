@@ -358,25 +358,25 @@ private fun ProductCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(100.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f))
                             .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (product.icon != null) {
-                            Icon(
-                                imageVector = product.icon,
-                                contentDescription = product.name,
-                                modifier = Modifier.size(44.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        } else if (product.imageRes != null) {
+                        if (product.imageRes != null) {
                             Image(
                                 painter = painterResource(id = product.imageRes),
                                 contentDescription = product.name,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
+                            )
+                        } else if (product.icon != null) {
+                            Icon(
+                                imageVector = product.icon,
+                                contentDescription = product.name,
+                                modifier = Modifier.size(44.dp),
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }

@@ -1,6 +1,7 @@
 package com.example.altafedeltium.ui.screens.cart
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -142,8 +144,12 @@ fun CheckoutScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(
+                    top = innerPadding.calculateTopPadding(),
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = innerPadding.calculateBottomPadding()
+                )
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -403,7 +409,7 @@ private fun SupermarketSection(
             val titleColor = when {
                 !choice.isAvailable -> MaterialTheme.colorScheme.onErrorContainer
                 choice.band == SupermarketDistanceBand.GREEN -> MaterialTheme.colorScheme.onPrimaryContainer
-                else -> MaterialTheme.colorScheme.onSurface
+                else -> MaterialTheme.colorScheme.primary // usa primary per testo su sfondo surface (come richiesto)
             }
             val infoColor = when {
                 !choice.isAvailable -> MaterialTheme.colorScheme.onErrorContainer
@@ -479,8 +485,8 @@ private fun AddressSection(
                         onClick = { onSelect(address.id) }
                     )
                     Column {
-                        Text(address.label, fontWeight = FontWeight.SemiBold)
-                        Text("${address.street}, ${address.city}", style = MaterialTheme.typography.bodySmall)
+                        Text(address.label, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("${address.street}, ${address.city}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f))
                     }
                 }
             }
@@ -575,7 +581,11 @@ private fun AddAddressForm(
             var pickedLat by rememberSaveable { mutableStateOf<Double?>(null) }
             var pickedLon by rememberSaveable { mutableStateOf<Double?>(null) }
 
-            OutlinedButton(onClick = { showMapPicker = true }, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = { showMapPicker = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+            ) {
                 Icon(Icons.Default.Place, contentDescription = null)
                 Text("  Verifica posizione su mappa")
             }
@@ -595,9 +605,12 @@ private fun AddAddressForm(
             Button(
                 onClick = { onSave(pickedLat, pickedLon) },
                 enabled = label.isNotBlank() && street.isNotBlank() && city.isNotBlank() && zipCode.length >= 5,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Salva indirizzo")
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text("Salva indirizzo", color = MaterialTheme.colorScheme.onPrimary)
+                }
             }
         }
     }

@@ -6,13 +6,17 @@ import androidx.lifecycle.ViewModel
 import com.example.altafedeltium.data.mock.JobMockData
 import com.example.altafedeltium.data.model.JobCategory
 import com.example.altafedeltium.data.model.JobPosition
+import com.example.altafedeltium.data.model.JobSortDirection
+import com.example.altafedeltium.data.model.JobSortField
 
 data class JobSearchUiState(
     val allPositions: List<JobPosition> = JobMockData.positions,
     val selectedCategory: JobCategory = JobCategory.TUTTI,
     val maxDistanceKm: Int = 100,
     val searchQuery: String = "",
-    val selectedCity: String = "Tutte le città"
+    val selectedCity: String = "Tutte le città",
+    val selectedSortField: JobSortField = JobSortField.DISTANCE,
+    val selectedSortDirection: JobSortDirection = JobSortDirection.ASC
 )
 
 class JobSearchViewModel : ViewModel() {
@@ -45,6 +49,16 @@ class JobSearchViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(selectedCity = city)
     }
 
+    fun onSortFieldChanged(field: JobSortField) {
+        _uiState.value = _uiState.value.copy(selectedSortField = field)
+    }
+
+    fun onSortDirectionChanged(direction: JobSortDirection) {
+        _uiState.value = _uiState.value.copy(selectedSortDirection = direction)
+    }
+
+    // ...existing code...
+
     fun hasActiveFilters(): Boolean {
         val state = _uiState.value
         return state.selectedCategory != JobCategory.TUTTI ||
@@ -74,7 +88,7 @@ class JobSearchViewModel : ViewModel() {
 
     fun filteredPositions(): List<JobPosition> {
         val state = _uiState.value
-        return state.allPositions.filter { pos ->
+        val filtered = state.allPositions.filter { pos ->
             val matchesCategory =
                 state.selectedCategory == JobCategory.TUTTI || pos.category == state.selectedCategory
             val matchesDistance = pos.distanceKm <= state.maxDistanceKm
@@ -84,7 +98,21 @@ class JobSearchViewModel : ViewModel() {
                     pos.title.contains(state.searchQuery, ignoreCase = true) ||
                     pos.company.contains(state.searchQuery, ignoreCase = true)
             matchesCategory && matchesDistance && matchesCity && matchesQuery
-        }.sortedWith(compareByDescending<JobPosition> { it.isUrgent }.thenBy { it.distanceKm })
+        }
+
+        // Applica ordinamento in base al campo e direzione selezionati
+        return filtered.sortedWith { a, b ->
+            val comparison = when (state.selectedSortField) {
+                JobSortField.DISTANCE -> a.distanceKm.compareTo(b.distanceKm)
+                JobSortField.TITLE -> a.title.compareTo(b.title, ignoreCase = true)
+                JobSortField.SALARY -> {
+                    val aSalary = a.salary?.filter { it.isDigit() }?.toIntOrNull() ?: 0
+                    val bSalary = b.salary?.filter { it.isDigit() }?.toIntOrNull() ?: 0
+                    aSalary.compareTo(bSalary)
+                }
+            }
+            if (state.selectedSortDirection == JobSortDirection.DESC) -comparison else comparison
+        }
     }
 }
 

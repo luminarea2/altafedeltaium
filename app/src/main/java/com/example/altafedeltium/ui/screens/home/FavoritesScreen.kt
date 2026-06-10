@@ -69,8 +69,12 @@ fun FavoritesScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(24.dp),
+                    .padding(
+                        top = innerPadding.calculateTopPadding(),
+                        start = 24.dp,
+                        end = 24.dp,
+                        bottom = innerPadding.calculateBottomPadding()
+                    ),
                 verticalArrangement = Arrangement.Center
             ) {
                 Text("Non hai ancora preferiti", style = MaterialTheme.typography.titleMedium)
@@ -80,8 +84,12 @@ fun FavoritesScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(16.dp),
+                    .padding(
+                        top = innerPadding.calculateTopPadding(),
+                        start = 16.dp,
+                        end = 16.dp,
+                        bottom = innerPadding.calculateBottomPadding()
+                    ),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(favorites, key = { it.id }) { product ->
@@ -121,19 +129,19 @@ private fun FavoriteProductCard(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                if (product.icon != null) {
-                    Icon(
-                        imageVector = product.icon,
-                        contentDescription = product.name,
-                        modifier = Modifier.size(32.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                } else if (product.imageRes != null) {
+                if (product.imageRes != null) {
                     Image(
                         painter = painterResource(id = product.imageRes),
                         contentDescription = product.name,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
+                    )
+                } else if (product.icon != null) {
+                    Icon(
+                        imageVector = product.icon,
+                        contentDescription = product.name,
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }

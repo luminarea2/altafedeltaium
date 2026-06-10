@@ -47,8 +47,12 @@ fun OrderHistoryScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(24.dp),
+                    .padding(
+                        top = innerPadding.calculateTopPadding(),
+                        start = 24.dp,
+                        end = 24.dp,
+                        bottom = innerPadding.calculateBottomPadding()
+                    ),
                 verticalArrangement = Arrangement.Center
             ) {
                 Text("Nessun ordine disponibile", style = MaterialTheme.typography.titleMedium)
@@ -57,8 +61,12 @@ fun OrderHistoryScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(16.dp),
+                    .padding(
+                        top = innerPadding.calculateTopPadding(),
+                        start = 16.dp,
+                        end = 16.dp,
+                        bottom = innerPadding.calculateBottomPadding()
+                    ),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(orders, key = { it.id }) { order ->

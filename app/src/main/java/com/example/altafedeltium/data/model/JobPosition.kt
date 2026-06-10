@@ -10,6 +10,17 @@ enum class JobCategory(val label: String) {
     SUPERVISIONE("Supervisione")
 }
 
+enum class JobSortField(val label: String) {
+    DISTANCE("Distanza"),
+    TITLE("Titolo"),
+    SALARY("Stipendio")
+}
+
+enum class JobSortDirection(val label: String) {
+    ASC("Crescente"),
+    DESC("Decrescente")
+}
+
 data class JobPosition(
     val id: Int,
     val title: String,

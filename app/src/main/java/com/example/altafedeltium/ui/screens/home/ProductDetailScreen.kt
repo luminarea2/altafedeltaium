@@ -80,13 +80,17 @@ fun ProductDetailScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+         Column(
+             modifier = Modifier
+                 .fillMaxSize()
+                 .padding(
+                     top = innerPadding.calculateTopPadding(),
+                     start = 16.dp,
+                     end = 16.dp,
+                     bottom = innerPadding.calculateBottomPadding()
+                 ),
+             verticalArrangement = Arrangement.spacedBy(12.dp)
+         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -97,19 +101,19 @@ fun ProductDetailScreen(
                         .height(220.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (product.icon != null) {
-                        Icon(
-                            imageVector = product.icon,
-                            contentDescription = product.name,
-                            modifier = Modifier.size(120.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    } else if (product.imageRes != null) {
+                    if (product.imageRes != null) {
                         Image(
                             painter = painterResource(id = product.imageRes),
                             contentDescription = product.name,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
+                        )
+                    } else if (product.icon != null) {
+                        Icon(
+                            imageVector = product.icon,
+                            contentDescription = product.name,
+                            modifier = Modifier.size(120.dp),
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }

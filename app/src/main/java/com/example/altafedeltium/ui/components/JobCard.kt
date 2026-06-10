@@ -55,7 +55,7 @@ fun JobCard(
                     Text(
                         text = position.company,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 if (position.isUrgent) {

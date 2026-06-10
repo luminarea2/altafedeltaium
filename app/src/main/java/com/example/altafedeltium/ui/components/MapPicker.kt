@@ -86,7 +86,7 @@ fun MapPickerDialog(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(4.dp)) {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Questa è una mappa finta di conferma: tocca il punto esatto dell'ingresso, poi conferma.",
+                        text = "Questa è una mappa di conferma: tocca il punto esatto dell'ingresso, poi conferma.",
                         modifier = Modifier.padding(12.dp)
                     )
                 }

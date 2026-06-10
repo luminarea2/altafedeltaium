@@ -51,7 +51,7 @@ fun CartScreen(
                             Text(
                                 "EUR ${"%.2f".format(homeViewModel.totalAmount())}",
                                 style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                         Spacer(modifier = Modifier.padding(8.dp))
@@ -65,29 +65,37 @@ fun CartScreen(
                 }
             }
         }
-    ) { paddingValues ->
-        if (cartItems.isEmpty()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Il tuo carrello è vuoto",
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+     ) { paddingValues ->
+         if (cartItems.isEmpty()) {
+             Column(
+                 modifier = Modifier
+                     .fillMaxSize()
+                     .padding(
+                         top = paddingValues.calculateTopPadding(),
+                         start = 24.dp,
+                         end = 24.dp,
+                         bottom = paddingValues.calculateBottomPadding()
+                     ),
+                 verticalArrangement = Arrangement.Center,
+                 horizontalAlignment = Alignment.CenterHorizontally
+             ) {
+                 Text(
+                     text = "Il tuo carrello è vuoto",
+                     style = MaterialTheme.typography.titleMedium
+                 )
+             }
+         } else {
+             LazyColumn(
+                 modifier = Modifier
+                     .fillMaxSize()
+                     .padding(
+                         top = paddingValues.calculateTopPadding(),
+                         start = 16.dp,
+                         end = 16.dp,
+                         bottom = paddingValues.calculateBottomPadding()
+                     ),
+                 verticalArrangement = Arrangement.spacedBy(8.dp)
+             ) {
                 items(cartItems) { item ->
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Row(
