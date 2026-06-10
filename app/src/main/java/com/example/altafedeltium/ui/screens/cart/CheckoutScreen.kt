@@ -1,16 +1,23 @@
 package com.example.altafedeltium.ui.screens.cart
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Place
 import com.example.altafedeltium.ui.components.MapPickerDialog
 import androidx.compose.material3.Button
@@ -25,6 +32,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -36,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.altafedeltium.data.model.Address
 import com.example.altafedeltium.data.model.PaymentCard
@@ -159,6 +168,14 @@ fun CheckoutScreen(
                 stepLabels = listOf("Supermercato", "Indirizzo", "Pagamento", "Conferma")
             )
 
+            if (currentStep == CheckoutStep.SUPERMARKET) {
+                DeliveryDaySection(
+                    days = deliveryDays,
+                    selectedDay = uiState.selectedDeliveryDay,
+                    onSelect = homeViewModel::setSelectedDeliveryDay
+                )
+            }
+
             when (currentStep) {
                 CheckoutStep.SUPERMARKET -> {
                     Text(
@@ -170,17 +187,6 @@ fun CheckoutScreen(
                         supermarkets = supermarketsForAddress,
                         selectedSupermarketId = selectedSupermarket?.id,
                         onSelect = homeViewModel::setSelectedSupermarket
-                    )
-                    Text(
-                        "Giorno di consegna",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                    DeliveryDaySection(
-                        days = deliveryDays,
-                        selectedDay = uiState.selectedDeliveryDay,
-                        onSelect = homeViewModel::setSelectedDeliveryDay
                     )
                 }
 
@@ -516,14 +522,61 @@ private fun DeliveryDaySection(
     selectedDay: String,
     onSelect: (String) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            days.forEach { day ->
-                FilterChip(
-                    selected = selectedDay == day,
-                    onClick = { onSelect(day) },
-                    label = { Text(day) }
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Event,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
                 )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    "Giorno di consegna",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                days.forEach { day ->
+                    val isSelected = selectedDay == day
+                    Surface(
+                        onClick = { onSelect(day) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                        border = if (!isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+                        tonalElevation = if (isSelected) 4.dp else 0.dp
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = day,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
             }
         }
     }
