@@ -146,7 +146,7 @@ fun WorkScreen(
                 ) {
                     item {
                         Text(
-                            text = "${filtered.size} posizione${if (filtered.size == 1) "" else "i"} trovata${if (filtered.size == 1) "" else "e"}",
+                            text = "${filtered.size} posizioni trovate",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             modifier = Modifier.fillMaxWidth(),
@@ -226,13 +226,13 @@ private fun JobFiltersPopupDialog(
 
                 // ── Filtro Ordinamento (PRIMO) ────────────────────────────────
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Ordina per", fontWeight = FontWeight.Medium)
+                    Text("Ordina per", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(com.example.altafedeltium.data.model.JobSortField.entries.toList()) { field ->
                             FilterChip(
                                 selected = field == selectedSortField,
                                 onClick = { onSortFieldChanged(field) },
-                                label = { Text(field.label) }
+                                label = { Text(field.label, style = MaterialTheme.typography.bodyLarge) }
                             )
                         }
                     }
@@ -240,13 +240,13 @@ private fun JobFiltersPopupDialog(
 
                 // ── Direzione Ordinamento (SECONDO) ─────────────────────────────
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Direzione", fontWeight = FontWeight.Medium)
+                    Text("Direzione", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(com.example.altafedeltium.data.model.JobSortDirection.entries.toList()) { direction ->
                             FilterChip(
                                 selected = direction == selectedSortDirection,
                                 onClick = { onSortDirectionChanged(direction) },
-                                label = { Text(direction.label) }
+                                label = { Text(direction.label, style = MaterialTheme.typography.bodyLarge) }
                             )
                         }
                     }
@@ -256,7 +256,7 @@ private fun JobFiltersPopupDialog(
 
                 // ── Filtro Città ──────────────────────────────────────────
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Città", fontWeight = FontWeight.Medium)
+                    Text("Città", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     CityDropdown(
                         cities = cities,
                         selected = selectedCity,
@@ -267,13 +267,13 @@ private fun JobFiltersPopupDialog(
 
                 // ── Filtro Distanza ───────────────────────────────────────
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Distanza massima", fontWeight = FontWeight.Medium)
+                    Text("Distanza massima", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(distanceOptions) { km ->
                             FilterChip(
                                 selected = maxDistanceKm == km,
                                 onClick = { onMaxDistanceChanged(km) },
-                                label = { Text("≤ $km km") }
+                                label = { Text("≤ $km km", style = MaterialTheme.typography.bodyLarge) }
                             )
                         }
                     }
@@ -281,13 +281,13 @@ private fun JobFiltersPopupDialog(
 
                 // ── Filtro Ruolo ──────────────────────────────────────────
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Ruolo", fontWeight = FontWeight.Medium)
+                    Text("Ruolo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(categories) { category ->
                             FilterChip(
                                 selected = category == selectedCategory,
                                 onClick = { onCategorySelected(category) },
-                                label = { Text(category.label) }
+                                label = { Text(category.label, style = MaterialTheme.typography.bodyLarge) }
                             )
                         }
                     }

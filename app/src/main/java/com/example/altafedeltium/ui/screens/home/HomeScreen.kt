@@ -203,7 +203,7 @@ private fun SearchFiltersCard(
                 }
             }
 
-            Text("Filtri attivi: $activeFiltersText", style = MaterialTheme.typography.bodySmall)
+            Text("Filtri attivi: $activeFiltersText", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
         }
     }
 
@@ -261,46 +261,46 @@ private fun FiltersPopupDialog(
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Ordina per", fontWeight = FontWeight.Medium)
+                    Text("Ordina per", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(SortField.entries.toList()) { field ->
                             FilterChip(
                                 selected = field == selectedSortField,
                                 onClick = { onSortFieldChanged(field) },
-                                label = { Text(field.label) }
+                                label = { Text(field.label, style = MaterialTheme.typography.bodyLarge) }
                             )
                         }
                     }
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Direzione", fontWeight = FontWeight.Medium)
+                    Text("Direzione", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(SortDirection.entries.toList()) { direction ->
                             FilterChip(
                                 selected = direction == selectedSortDirection,
                                 onClick = { onSortDirectionChanged(direction) },
-                                label = { Text(direction.label) }
+                                label = { Text(direction.label, style = MaterialTheme.typography.bodyLarge) }
                             )
                         }
                     }
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Categoria", fontWeight = FontWeight.Medium)
+                    Text("Categoria", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(categories) { category ->
                             FilterChip(
                                 selected = category == selectedCategory,
                                 onClick = { onCategorySelected(category) },
-                                label = { Text(category) }
+                                label = { Text(category, style = MaterialTheme.typography.bodyLarge) }
                             )
                         }
                     }
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Prezzo massimo: EUR ${"%.2f".format(maxPriceFilter)}")
+                    Text("Prezzo massimo: EUR ${"%.2f".format(maxPriceFilter)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Slider(
                         value = maxPriceFilter.toFloat(),
                         onValueChange = { onMaxPriceChanged(it.toDouble()) },
