@@ -34,6 +34,7 @@ import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -45,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.altafedeltium.ui.components.JobCard
@@ -64,13 +66,24 @@ fun WorkScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Opportunità di Lavoro") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Opportunità di Lavoro",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -84,18 +97,13 @@ fun WorkScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    top = innerPadding.calculateTopPadding(),
-                    start = 16.dp,
-                    end = 16.dp,
-                    bottom = innerPadding.calculateBottomPadding()
-                )
+                .padding(innerPadding)
         ) {
             // ── Barra di ricerca + Bottone Filtri ─────────────────────────
              Row(
                  modifier = Modifier
                      .fillMaxWidth()
-                     .padding(horizontal = 16.dp),
+                     .padding(horizontal = 16.dp, vertical = 8.dp),
                  horizontalArrangement = Arrangement.spacedBy(8.dp),
                  verticalAlignment = Alignment.CenterVertically
              ) {
@@ -105,7 +113,7 @@ fun WorkScreen(
                     label = { Text("Cerca ruolo o azienda…") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(0.85f)
+                    modifier = Modifier.weight(1f)
                 )
                 Button(onClick = { showFiltersPopup = true }, modifier = Modifier.size(52.dp), contentPadding = PaddingValues(0.dp)) {
                     Icon(Icons.Default.Tune, contentDescription = "Apri filtri")
@@ -140,7 +148,9 @@ fun WorkScreen(
                         Text(
                             text = "${filtered.size} posizione${if (filtered.size == 1) "" else "i"} trovata${if (filtered.size == 1) "" else "e"}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
                         )
                     }
                     items(filtered, key = { it.id }) { position ->
