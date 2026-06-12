@@ -585,6 +585,10 @@ private fun AddressEditorCard(
         )
     }
 
+    // Allineiamo l'editor indirizzo del profilo alla versione usata nel checkout:
+    // - bottone mappa full-width
+    // - mostra coordinate scelte come testo separato
+    // - pulsante Salva full-width con stessa label e condizioni del checkout
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f)),
         shape = RoundedCornerShape(18.dp)
@@ -604,38 +608,55 @@ private fun AddressEditorCard(
             OutlinedTextField(value = city, onValueChange = { city = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Città") }, colors = OutlinedTextFieldDefaults.colors(cursorColor = AccentText, focusedBorderColor = AccentText, focusedLabelColor = AccentText))
             OutlinedTextField(value = zipCode, onValueChange = { zipCode = it }, modifier = Modifier.fillMaxWidth(), label = { Text("CAP") }, colors = OutlinedTextFieldDefaults.colors(cursorColor = AccentText, focusedBorderColor = AccentText, focusedLabelColor = AccentText))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(
-                    onClick = { showMapPicker = true },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
-                ) {
-                    Icon(Icons.Default.Place, contentDescription = null)
-                    Text("  Verifica posizione su mappa")
-                }
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)
-                ) {
-                    Text("Annulla")
+            OutlinedButton(
+                onClick = { showMapPicker = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+            ) {
+                Icon(Icons.Default.Place, contentDescription = null)
+                Text("  Verifica posizione su mappa")
+            }
+
+            if (showMapPicker) {
+                MapPickerDialog(
+                    initialLat = latitude,
+                    initialLon = longitude,
+                    onDismiss = { showMapPicker = false },
+                    onConfirm = { lat, lon ->
+                        latitude = lat
+                        longitude = lon
+                        showMapPicker = false
+                    }
+                )
+            }
+
+            // mostra le coordinate scelte (come nel checkout)
+            if (latitude != null && longitude != null) {
+                val lat = latitude
+                val lon = longitude
+                Text("Entrata impostata: ${"%.5f".format(lat)} , ${"%.5f".format(lon)}", modifier = Modifier.padding(top = 4.dp))
+            }
+
+            Button(
+                onClick = { onSave(label, street, city, zipCode, latitude, longitude) },
+                enabled = label.isNotBlank() && street.isNotBlank() && city.isNotBlank() && zipCode.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text("Salva indirizzo", color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = { onSave(label, street, city, zipCode, latitude, longitude) },
-                    modifier = Modifier.weight(1f),
-                    enabled = label.isNotBlank() && street.isNotBlank() && city.isNotBlank() && zipCode.isNotBlank(),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text("Salva", color = MaterialTheme.colorScheme.onPrimary)
-                    }
-                }
-                if (latitude != null && longitude != null) {
-                    Text("Entrata impostata: ${"%.5f".format(latitude)} , ${"%.5f".format(longitude)}", modifier = Modifier.weight(1f))
-                }
+            // Manteniamo comunque un pulsante Annulla per chiudere l'editor nel profilo,
+            // ma lo posizioniamo sotto il Salva e in stile outlined, così da non sovrapporre
+            // la UX usata nel checkout che non ha cancel inline.
+            OutlinedButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)
+            ) {
+                Text("Annulla")
             }
         }
     }
@@ -652,6 +673,7 @@ private fun AddressCard(
     onSetDefault: () -> Unit,
     onSelectForDelivery: () -> Unit
 ) {
+    var showRemoveDialog by rememberSaveable { mutableStateOf(false) }
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -689,7 +711,7 @@ private fun AddressCard(
                     Text("Modifica")
                 }
                 OutlinedButton(
-                    onClick = onRemove,
+                    onClick = { showRemoveDialog = true },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)
                 ) {
@@ -716,6 +738,21 @@ private fun AddressCard(
                 }
             }
         }
+    }
+
+    if (showRemoveDialog) {
+        ConfirmationDialog(
+            title = "Rimuovi indirizzo",
+            message = "Sei sicuro di voler rimuovere l'indirizzo \"${address.label}: ${address.street}, ${address.city}\"?",
+            confirmLabel = "Rimuovi",
+            dismissLabel = "Annulla",
+            onConfirm = {
+                showRemoveDialog = false
+                onRemove()
+            },
+            onDismiss = { showRemoveDialog = false },
+            destructiveConfirm = true
+        )
     }
 }
 

@@ -462,7 +462,25 @@ class HomeViewModel : ViewModel() {
                     SupermarketDistanceBand.RED -> 2
                 }
             }.thenBy { it.distanceKm }
-        )
+        ).let { sortedChoices ->
+            // Ensure at least one supermarket is always available to avoid a state
+            // in which all choices are marked non-available (which can happen if
+            // address/day matching logic is too strict). If none are available,
+            // mark the closest supermarket as available (fallback behaviour).
+            if (sortedChoices.any { it.isAvailable }) {
+                sortedChoices
+            } else {
+                sortedChoices.mapIndexed { index, choice ->
+                    if (index == 0) {
+                        choice.copy(
+                            supermarket = choice.supermarket.copy(isAvailable = true),
+                            isAvailable = true,
+                            band = if (choice.band == SupermarketDistanceBand.RED) SupermarketDistanceBand.WHITE else choice.band
+                        )
+                    } else choice
+                }
+            }
+        }
     }
 
     private fun haversineKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {

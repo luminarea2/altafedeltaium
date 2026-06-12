@@ -104,10 +104,12 @@ fun CheckoutScreen(
     var cardCvv by rememberSaveable { mutableStateOf("") }
 
     val canContinue = when (currentStep) {
-        CheckoutStep.SUPERMARKET -> selectedSupermarket != null
+        // richiedi che il supermercato selezionato sia anche disponibile
+        CheckoutStep.SUPERMARKET -> selectedSupermarket != null && (selectedSupermarketChoice?.isAvailable == true)
         CheckoutStep.ADDRESS -> selectedAddress != null
         CheckoutStep.PAYMENT -> selectedPayment != PaymentMethod.CARD || selectedCard != null
-        CheckoutStep.SUMMARY -> selectedSupermarket != null && selectedAddress != null && uiState.cartItems.isNotEmpty()
+        // nella summary richiedi che il supermercato sia selezionato e disponibile
+        CheckoutStep.SUMMARY -> selectedSupermarket != null && (selectedSupermarketChoice?.isAvailable == true) && selectedAddress != null && uiState.cartItems.isNotEmpty()
     }
 
     Scaffold(
@@ -218,7 +220,16 @@ fun CheckoutScreen(
                     SupermarketSection(
                         supermarkets = supermarketsForAddress,
                         selectedSupermarketId = selectedSupermarket?.id,
-                        onSelect = homeViewModel::setSelectedSupermarket
+                        onSelect = homeViewModel::setSelectedSupermarket,
+                        onUnavailableSelect = { choice ->
+                            // mostra un messaggio di errore quando l'utente prova a selezionare un supermercato non disponibile
+                            errorMessage = if (choice.distanceKm > 20.0) {
+                                "Supermercato troppo lontano per il giorno selezionato."
+                            } else {
+                                "Supermercato non disponibile per il giorno scelto."
+                            }
+                            showErrorDialog = true
+                        }
                     )
                 }
 
@@ -492,7 +503,8 @@ private fun CheckoutBottomBar(
 private fun SupermarketSection(
     supermarkets: List<SupermarketChoice>,
     selectedSupermarketId: Int?,
-    onSelect: (Int) -> Unit
+    onSelect: (Int) -> Unit,
+    onUnavailableSelect: (SupermarketChoice) -> Unit = {}
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         supermarkets.forEach { choice ->
@@ -525,7 +537,14 @@ private fun SupermarketSection(
                 ) {
                     CustomRadioButton(
                         selected = selectedSupermarketId == supermarket.id,
-                        onClick = { if (choice.isAvailable) onSelect(supermarket.id) },
+                        onClick = {
+                            if (choice.isAvailable) {
+                                onSelect(supermarket.id)
+                            } else {
+                                // segnala al parent che è stato cliccato un supermercato non disponibile
+                                onUnavailableSelect(choice)
+                            }
+                        },
                         enabled = choice.isAvailable
                     )
                     Column {
