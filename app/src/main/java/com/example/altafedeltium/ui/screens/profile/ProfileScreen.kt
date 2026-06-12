@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-// ...existing imports...
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -62,8 +61,6 @@ import com.example.altafedeltium.data.model.Order
 import com.example.altafedeltium.ui.viewmodel.HomeViewModel
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-
-// ...existing code...
 
 private enum class ProfileSection(val title: String) {
     PERSONAL_DATA("I miei dati"),
@@ -155,10 +152,16 @@ fun ProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 32.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                // use the theme error color to represent a destructive action (red)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
             ) {
-                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                Text("Logout")
+                Icon(
+                    Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 8.dp),
+                    tint = MaterialTheme.colorScheme.onError
+                )
+                Text("Logout", color = MaterialTheme.colorScheme.onError)
             }
         }
         }
@@ -179,7 +182,10 @@ fun ProfileScreen(
                 showLogoutConfirmation = false
                 onLogout()
             },
-            onDismiss = { showLogoutConfirmation = false }
+            onDismiss = { showLogoutConfirmation = false },
+            destructiveConfirm = true,
+            // rendiamo il pulsante "Resta" dello stesso stile del pulsante "Salva modifiche"
+            dismissAsPrimary = true
         )
     }
 
