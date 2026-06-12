@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+// import androidx.compose.foundation.layout.height (rimosso: non usato)
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -17,7 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.lazy.LazyRow
+// import androidx.compose.foundation.lazy.LazyRow (rimosso: non usato)
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Event
@@ -33,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -162,17 +163,19 @@ fun CheckoutScreen(
                 },
                 onBack = {
                     if (showConfirmDialog) {
+                        // If a confirmation dialog is visible, simply close it and stay on the same step
                         showConfirmDialog = false
-                        currentStep = CheckoutStep.SUPERMARKET
-                        onBack()
-                    } else if (currentStep == CheckoutStep.SUPERMARKET || currentStep == CheckoutStep.SUMMARY) {
-                        currentStep = CheckoutStep.SUPERMARKET
-                        onBack()
                     } else {
-                        currentStep = when (currentStep) {
-                            CheckoutStep.ADDRESS -> CheckoutStep.SUPERMARKET
-                            CheckoutStep.PAYMENT -> CheckoutStep.ADDRESS
-                            else -> currentStep
+                        // Navigate one step back (SUMMARY -> PAYMENT -> ADDRESS -> SUPERMARKET)
+                        when (currentStep) {
+                            CheckoutStep.SUPERMARKET -> {
+                                // already at first step: navigate back to the cart
+                                currentStep = CheckoutStep.SUPERMARKET
+                                onBack()
+                            }
+                            CheckoutStep.ADDRESS -> currentStep = CheckoutStep.SUPERMARKET
+                            CheckoutStep.PAYMENT -> currentStep = CheckoutStep.ADDRESS
+                            CheckoutStep.SUMMARY -> currentStep = CheckoutStep.PAYMENT
                         }
                     }
                 }
@@ -733,10 +736,54 @@ private fun AddAddressForm(
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Nuovo indirizzo", style = MaterialTheme.typography.titleMedium)
-            OutlinedTextField(value = label, onValueChange = onLabelChange, label = { Text("Etichetta") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-            OutlinedTextField(value = street, onValueChange = onStreetChange, label = { Text("Via e numero civico") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-            OutlinedTextField(value = city, onValueChange = onCityChange, label = { Text("Città") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-            OutlinedTextField(value = zipCode, onValueChange = onZipCodeChange, label = { Text("CAP") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            OutlinedTextField(
+                value = label,
+                onValueChange = onLabelChange,
+                label = { Text("Etichetta") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    cursorColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedBorderColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedLabelColor = com.example.altafedeltium.ui.theme.AccentText
+                )
+            )
+            OutlinedTextField(
+                value = street,
+                onValueChange = onStreetChange,
+                label = { Text("Via e numero civico") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    cursorColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedBorderColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedLabelColor = com.example.altafedeltium.ui.theme.AccentText
+                )
+            )
+            OutlinedTextField(
+                value = city,
+                onValueChange = onCityChange,
+                label = { Text("Città") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    cursorColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedBorderColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedLabelColor = com.example.altafedeltium.ui.theme.AccentText
+                )
+            )
+            OutlinedTextField(
+                value = zipCode,
+                onValueChange = onZipCodeChange,
+                label = { Text("CAP") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    cursorColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedBorderColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedLabelColor = com.example.altafedeltium.ui.theme.AccentText
+                )
+            )
             var showMapPicker by rememberSaveable { mutableStateOf(false) }
             var pickedLat by rememberSaveable { mutableStateOf<Double?>(null) }
             var pickedLon by rememberSaveable { mutableStateOf<Double?>(null) }
@@ -761,6 +808,12 @@ private fun AddAddressForm(
                         showMapPicker = false
                     }
                 )
+            }
+            // mostra le coordinate scelte (stesso feedback presente nell'editor indirizzi del profilo)
+            if (pickedLat != null && pickedLon != null) {
+                val lat = pickedLat
+                val lon = pickedLon
+                Text("Entrata impostata: ${"%.5f".format(lat)} , ${"%.5f".format(lon)}", modifier = Modifier.padding(top = 4.dp))
             }
             Button(
                 onClick = { onSave(pickedLat, pickedLon) },
@@ -791,22 +844,54 @@ private fun AddCardForm(
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Nuova carta", style = MaterialTheme.typography.titleMedium)
-            OutlinedTextField(value = holderName, onValueChange = onHolderNameChange, label = { Text("Intestatario") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-            OutlinedTextField(value = cardNumber, onValueChange = onCardNumberChange, label = { Text("Numero carta") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            OutlinedTextField(
+                value = holderName,
+                onValueChange = onHolderNameChange,
+                label = { Text("Intestatario") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    cursorColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedBorderColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedLabelColor = com.example.altafedeltium.ui.theme.AccentText
+                )
+            )
+            OutlinedTextField(
+                value = cardNumber,
+                onValueChange = onCardNumberChange,
+                label = { Text("Numero carta") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    cursorColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedBorderColor = com.example.altafedeltium.ui.theme.AccentText,
+                    focusedLabelColor = com.example.altafedeltium.ui.theme.AccentText
+                )
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = expiry,
                     onValueChange = onExpiryChange,
                     label = { Text("Scadenza MM/AA") },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        cursorColor = com.example.altafedeltium.ui.theme.AccentText,
+                        focusedBorderColor = com.example.altafedeltium.ui.theme.AccentText,
+                        focusedLabelColor = com.example.altafedeltium.ui.theme.AccentText
+                    )
                 )
                 OutlinedTextField(
                     value = cvv,
                     onValueChange = onCvvChange,
                     label = { Text("CVV") },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        cursorColor = com.example.altafedeltium.ui.theme.AccentText,
+                        focusedBorderColor = com.example.altafedeltium.ui.theme.AccentText,
+                        focusedLabelColor = com.example.altafedeltium.ui.theme.AccentText
+                    )
                 )
             }
             Button(
