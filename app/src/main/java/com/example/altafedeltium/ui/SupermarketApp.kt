@@ -209,17 +209,25 @@ private fun SupermarketNavHost(
                 }
             )
         }
-        composable(AppDestination.OrderHistory.route) {
-            OrderHistoryScreen(
-                homeViewModel = homeViewModel,
-                onBack = {
-                    // Navigate back to the cart (which should be empty after placing the order)
+        composable(AppDestination.OrderHistory.route) { backStackEntry ->
+            // Decide back navigation depending on where we came from.
+            // If we come from Checkout (user just placed an order), go to Cart and remove Checkout
+            // otherwise just popBackStack() so Profile -> OrderHistory returns to Profile.
+            val previousRoute = navController.previousBackStackEntry?.destination?.route
+            val orderHistoryOnBack: () -> Unit = if (previousRoute == AppDestination.Checkout.route) {
+                {
                     navController.navigate(AppDestination.Cart.route) {
-                        // Remove the checkout screen from the back stack so Back from Cart doesn't return to it
                         popUpTo(AppDestination.Checkout.route) { inclusive = true }
                         launchSingleTop = true
                     }
                 }
+            } else {
+                { navController.popBackStack() }
+            }
+
+            OrderHistoryScreen(
+                homeViewModel = homeViewModel,
+                onBack = orderHistoryOnBack
             )
         }
         composable(AppDestination.Work.route) {
