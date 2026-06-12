@@ -37,6 +37,9 @@ val OrangeSurface = Color(0xFFFFFBFF)
 val WarmOrange = Color(0xFFFFBF70)
 val WarmOrangeLight = Color(0xFFFFDAB0)
 
+// Accent text color used across the app for orange/yellow labels — change here to update globally
+val AccentText = MainOrangeDark
+
 // Gradient based on #FFBF70 with high contrast against white text/icons
 // We use a darker version for the bottom of the gradient to ensure white readability
 val WarmOrangeGradient = Brush.verticalGradient(

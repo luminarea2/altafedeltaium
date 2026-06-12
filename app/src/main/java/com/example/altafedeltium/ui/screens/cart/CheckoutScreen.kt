@@ -1,5 +1,6 @@
 package com.example.altafedeltium.ui.screens.cart
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Event
@@ -30,7 +33,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,6 +45,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,6 +55,7 @@ import com.example.altafedeltium.data.model.PaymentMethod
 import com.example.altafedeltium.data.model.SupermarketChoice
 import com.example.altafedeltium.data.model.SupermarketDistanceBand
 import com.example.altafedeltium.ui.components.ConfirmationDialog
+import com.example.altafedeltium.ui.components.CustomRadioButton
 import com.example.altafedeltium.ui.components.StepIndicator
 import com.example.altafedeltium.ui.viewmodel.HomeViewModel
 import java.text.SimpleDateFormat
@@ -110,7 +114,13 @@ fun CheckoutScreen(
             TopAppBar(
                 title = { Text("Checkout") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        // Reset any transient checkout UI state and go back to cart immediately
+                        showConfirmDialog = false
+                        currentStep = CheckoutStep.SUPERMARKET
+                        // navigate back to cart
+                        onBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                     }
                 }
@@ -119,8 +129,11 @@ fun CheckoutScreen(
         bottomBar = {
             CheckoutBottomBar(
                 total = homeViewModel.totalAmount(),
-                buttonLabel = if (currentStep == CheckoutStep.SUMMARY) "Acquista" else "Continua",
+                subtotal = homeViewModel.subtotal(),
+                deliveryFee = homeViewModel.deliveryFee(),
+                buttonLabel = if (currentStep == CheckoutStep.SUMMARY) "Acquista" else "Avanti",
                 enabled = canContinue,
+                canGoBack = true,
                 onClick = {
                     if (!canContinue) {
                         errorMessage = when (currentStep) {
@@ -144,6 +157,22 @@ fun CheckoutScreen(
                         CheckoutStep.SUMMARY -> {
                             showConfirmDialog = true
                             CheckoutStep.SUMMARY
+                        }
+                    }
+                },
+                onBack = {
+                    if (showConfirmDialog) {
+                        showConfirmDialog = false
+                        currentStep = CheckoutStep.SUPERMARKET
+                        onBack()
+                    } else if (currentStep == CheckoutStep.SUPERMARKET || currentStep == CheckoutStep.SUMMARY) {
+                        currentStep = CheckoutStep.SUPERMARKET
+                        onBack()
+                    } else {
+                        currentStep = when (currentStep) {
+                            CheckoutStep.ADDRESS -> CheckoutStep.SUPERMARKET
+                            CheckoutStep.PAYMENT -> CheckoutStep.ADDRESS
+                            else -> currentStep
                         }
                     }
                 }
@@ -203,7 +232,8 @@ fun CheckoutScreen(
                     )
                     OutlinedButton(
                         onClick = { showAddAddressForm = !showAddAddressForm },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = com.example.altafedeltium.ui.theme.AccentText)
                     ) {
                         Text(if (showAddAddressForm) "Chiudi nuovo indirizzo" else "Aggiungi indirizzo")
                     }
@@ -256,7 +286,8 @@ fun CheckoutScreen(
                         )
                         OutlinedButton(
                             onClick = { showAddCardForm = !showAddCardForm },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = com.example.altafedeltium.ui.theme.AccentText)
                         ) {
                             Text(if (showAddCardForm) "Chiudi nuova carta" else "Aggiungi carta")
                         }
@@ -371,28 +402,84 @@ fun CheckoutScreen(
 @Composable
 private fun CheckoutBottomBar(
     total: Double,
+    subtotal: Double = 0.0,
+    deliveryFee: Double = 0.0,
     buttonLabel: String,
     enabled: Boolean,
-    onClick: () -> Unit
+    canGoBack: Boolean,
+    onClick: () -> Unit,
+    onBack: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Breakdown dei costi
+            if (subtotal > 0.0 || deliveryFee > 0.0) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Subtotale:", style = MaterialTheme.typography.bodySmall)
+                        Text("${"%.2f".format(subtotal)} EUR", style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (deliveryFee > 0.0) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Consegna:", style = MaterialTheme.typography.bodySmall)
+                            Text("${"%.2f".format(deliveryFee)} EUR", style = MaterialTheme.typography.bodySmall, color = com.example.altafedeltium.ui.theme.AccentText)
+                        }
+                    }
+                }
+            }
+            
+            // Testo totale centrato
             Text(
                 text = "Totale: ${"%.2f".format(total)} EUR",
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f)
+                fontWeight = FontWeight.Bold
             )
-            Button(
-                onClick = onClick,
-                enabled = enabled,
-                modifier = Modifier.weight(1f)
+            
+            // Riga con i pulsanti
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(buttonLabel)
+                // Pulsante indietro
+                if (canGoBack) {
+                    OutlinedButton(
+                        onClick = onBack,
+                        modifier = Modifier.weight(1f),
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = com.example.altafedeltium.ui.theme.AccentText)
+                    ) {
+                        Text("Indietro")
+                    }
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                
+                // Pulsante avanti
+                Button(
+                    onClick = onClick,
+                    enabled = enabled,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(buttonLabel)
+                }
             }
         }
     }
@@ -415,12 +502,12 @@ private fun SupermarketSection(
             val titleColor = when {
                 !choice.isAvailable -> MaterialTheme.colorScheme.onErrorContainer
                 choice.band == SupermarketDistanceBand.GREEN -> MaterialTheme.colorScheme.onPrimaryContainer
-                else -> MaterialTheme.colorScheme.primary // usa primary per testo su sfondo surface (come richiesto)
+                else -> com.example.altafedeltium.ui.theme.AccentText // usa AccentText per supermarket non consigliati
             }
             val infoColor = when {
                 !choice.isAvailable -> MaterialTheme.colorScheme.onErrorContainer
                 choice.band == SupermarketDistanceBand.GREEN -> MaterialTheme.colorScheme.onPrimaryContainer
-                else -> MaterialTheme.colorScheme.primary
+                else -> com.example.altafedeltium.ui.theme.AccentText
             }
 
             Card(
@@ -433,7 +520,7 @@ private fun SupermarketSection(
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    RadioButton(
+                    CustomRadioButton(
                         selected = selectedSupermarketId == supermarket.id,
                         onClick = { if (choice.isAvailable) onSelect(supermarket.id) },
                         enabled = choice.isAvailable
@@ -486,13 +573,13 @@ private fun AddressSection(
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    RadioButton(
+                    CustomRadioButton(
                         selected = selectedAddressId == address.id,
                         onClick = { onSelect(address.id) }
                     )
                     Column {
                         Text(address.label, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                        Text("${address.street}, ${address.city}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f))
+                        Text("${address.street}, ${address.city}", style = MaterialTheme.typography.bodySmall, color = com.example.altafedeltium.ui.theme.AccentText)
                     }
                 }
             }
@@ -506,7 +593,7 @@ private fun PaymentSection(
     onSelect: (PaymentMethod) -> Unit
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        PaymentMethod.entries.forEach { method ->
+        PaymentMethod.entries.filter { it != PaymentMethod.SATISPAY }.forEach { method ->
             FilterChip(
                 selected = selectedPayment == method,
                 onClick = { onSelect(method) },
@@ -545,38 +632,58 @@ private fun DeliveryDaySection(
                     "Giorno di consegna",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = com.example.altafedeltium.ui.theme.AccentText
                 )
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                days.forEach { day ->
-                    val isSelected = selectedDay == day
-                    Surface(
-                        onClick = { onSelect(day) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                        border = if (!isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
-                        tonalElevation = if (isSelected) 4.dp else 0.dp
-                    ) {
-                        Box(
-                            modifier = Modifier.padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    days.forEach { day ->
+                        val isSelected = selectedDay == day
+                        Surface(
+                            onClick = { onSelect(day) },
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                            border = if (!isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+                            tonalElevation = if (isSelected) 4.dp else 0.dp
                         ) {
-                            Text(
-                                text = day,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                textAlign = TextAlign.Center
-                            )
+                            Box(
+                                modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = day,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
                 }
+                
+                // Overlay con fade effect sulla destra
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .width(40.dp)
+                        .fillMaxSize()
+                        .background(
+                            brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                )
+                            )
+                        )
+                )
             }
         }
     }
@@ -597,7 +704,7 @@ private fun CardListSection(
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    RadioButton(
+                    CustomRadioButton(
                         selected = selectedCardId == card.id,
                         onClick = { onSelectCard(card.id) }
                     )
@@ -637,7 +744,7 @@ private fun AddAddressForm(
             OutlinedButton(
                 onClick = { showMapPicker = true },
                 modifier = Modifier.fillMaxWidth(),
-                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
             ) {
                 Icon(Icons.Default.Place, contentDescription = null)
                 Text("  Verifica posizione su mappa")

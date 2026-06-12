@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,25 +34,29 @@ import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
+// ...removed unused Material3 imports (top app bar / scaffold / slider)
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -60,14 +65,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import com.example.altafedeltium.ui.theme.AccentText
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.altafedeltium.ui.components.ConfirmationDialog
 import com.example.altafedeltium.ui.components.StepIndicator
 import com.example.altafedeltium.ui.viewmodel.ApplicationViewModel
+import com.example.altafedeltium.ui.viewmodel.HomeViewModel
 import com.example.altafedeltium.ui.viewmodel.VideoRecordingState
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.material.icons.filled.Replay
 
 // ══════════════════════════════════════════════════════════
 //  ApplicationScreen – entry point (3-step funnel)
@@ -79,12 +94,23 @@ fun ApplicationScreen(
     jobId: Int,
     onBack: () -> Unit,
     onSuccess: () -> Unit,
-    viewModel: ApplicationViewModel = viewModel()
+    viewModel: ApplicationViewModel = viewModel(),
+    homeViewModel: HomeViewModel? = null
 ) {
     val uiState by viewModel.uiState
 
     LaunchedEffect(jobId) { viewModel.setJob(jobId) }
     LaunchedEffect(uiState.submitted) { if (uiState.submitted) onSuccess() }
+
+    // if a phone is present in the user's profile, prefill the application phone field
+    homeViewModel?.let { hv ->
+        val homeState by hv.uiState
+        LaunchedEffect(homeState.userProfile.phone) {
+            if (uiState.phone.isBlank() && homeState.userProfile.phone.isNotBlank()) {
+                viewModel.onPhoneChanged(homeState.userProfile.phone)
+            }
+        }
+    }
 
     if (uiState.showConfirmDialog) {
         ConfirmationDialog(
@@ -97,45 +123,40 @@ fun ApplicationScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.fillMaxWidth()
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Top bar (prima era topBar di Scaffold)
+        // Header background forced to white and label fixed to "Candidatura" per UI requirement
+        Surface(
+            color = Color.White,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    contentAlignment = Alignment.Center
+                IconButton(
+                    onClick = {
+                        if (uiState.currentStep > 1) viewModel.onPreviousStep() else onBack()
+                    },
+                    modifier = Modifier.align(Alignment.CenterStart)
                 ) {
-                    IconButton(
-                        onClick = {
-                            if (uiState.currentStep > 1) viewModel.onPreviousStep() else onBack()
-                        },
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
-                    }
-                    Text(
-                        text = uiState.jobPosition?.title ?: "Candidatura",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                 }
+                Text(
+                    text = "Candidatura",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
-    ) { innerPadding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    top = innerPadding.calculateTopPadding(),
-                    start = 20.dp,
-                    end = 20.dp,
-                    bottom = innerPadding.calculateBottomPadding()
-                )
+                .padding(start = 20.dp, end = 20.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -171,12 +192,26 @@ fun ApplicationScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (uiState.currentStep > 1) {
-                    OutlinedButton(onClick = viewModel::onPreviousStep, modifier = Modifier.weight(1f)) {
+                    OutlinedButton(
+                        onClick = viewModel::onPreviousStep,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)
+                    ) {
                         Text("Indietro")
                     }
                 }
-                Button(onClick = viewModel::onNextStep, modifier = Modifier.weight(1f)) {
-                    Text(if (uiState.currentStep == 3) "Invia Candidatura 🚀" else "Avanti →")
+
+                // abilita il pulsante principale solo se i requisiti del passo corrente sono soddisfatti
+                // Nota: per il passo 3 l'utente deve aver ACCETTATO esplicitamente il video oppure aver scelto di non registrarlo
+                val primaryEnabled = when (uiState.currentStep) {
+                    1 -> true // la validazione viene eseguita onNextStep()
+                    2 -> uiState.cvUploaded
+                    3 -> uiState.videoAccepted || uiState.videoOptOut
+                    else -> true
+                }
+
+                Button(onClick = viewModel::onNextStep, modifier = Modifier.weight(1f), enabled = primaryEnabled) {
+                    Text(if (uiState.currentStep == 3) "Invia Candidatura" else "Avanti →")
                 }
             }
 
@@ -197,7 +232,7 @@ private fun StepOnePersonalData(viewModel: ApplicationViewModel) {
         Text(
             "Inserisci le tue informazioni per procedere con la candidatura.",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            color = AccentText
         )
         OutlinedTextField(
             value = uiState.fullName,
@@ -209,24 +244,30 @@ private fun StepOnePersonalData(viewModel: ApplicationViewModel) {
                 uiState.fullNameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                cursorColor = AccentText,
+                focusedBorderColor = AccentText,
+                focusedLabelColor = AccentText
+            )
         )
-        OutlinedTextField(
+            OutlinedTextField(
             value = uiState.phone,
             onValueChange = viewModel::onPhoneChanged,
             label = { Text("Numero di Telefono *") },
             placeholder = { Text("Es. 333 123 4567") },
             isError = uiState.phoneError != null,
             supportingText = {
-                if (uiState.phoneError != null) {
-                    Text(uiState.phoneError!!, color = MaterialTheme.colorScheme.error)
-                } else {
-                    Text("Usato solo per contattarti riguardo a questa candidatura", style = MaterialTheme.typography.labelSmall)
-                }
+                uiState.phoneError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                cursorColor = AccentText,
+                focusedBorderColor = AccentText,
+                focusedLabelColor = AccentText
+            )
         )
         OutlinedTextField(
             value = uiState.email,
@@ -239,7 +280,12 @@ private fun StepOnePersonalData(viewModel: ApplicationViewModel) {
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                cursorColor = AccentText,
+                focusedBorderColor = AccentText,
+                focusedLabelColor = AccentText
+            )
         )
     }
 }
@@ -268,7 +314,7 @@ private fun StepTwoCvUpload(viewModel: ApplicationViewModel) {
         Text(
             "Carica il tuo curriculum in formato PDF. Il selezionatore lo esaminerà prima del colloquio.",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            color = AccentText
         )
         if (!uiState.cvUploaded) {
             Card(
@@ -280,9 +326,9 @@ private fun StepTwoCvUpload(viewModel: ApplicationViewModel) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
-                    Text("Nessun CV caricato", style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
-                    Text("Formato accettato: PDF", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(48.dp), tint = AccentText)
+                    Text("Nessun CV caricato", style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, color = AccentText)
+                    Text("Formato accettato: PDF", style = MaterialTheme.typography.labelSmall, color = AccentText)
                     Button(onClick = { pdfPickerLauncher.launch("application/pdf") }, modifier = Modifier.fillMaxWidth()) {
                         Text("Seleziona CV dal dispositivo")
                     }
@@ -291,7 +337,7 @@ private fun StepTwoCvUpload(viewModel: ApplicationViewModel) {
             TextButton(
                 onClick = { viewModel.onCvSelected("curriculum_non_caricato.pdf") },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Salta per ora (puoi inviarlo via email)") }
+            ) { Text("Salta per ora", color = AccentText) }
         } else {
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
@@ -329,16 +375,53 @@ private fun StepTwoCvUpload(viewModel: ApplicationViewModel) {
 
 @Composable
 private fun StepThreeVideo(viewModel: ApplicationViewModel) {
+    val uiState by viewModel.uiState
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Step 3: Video Presentazione", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Text(
             "Un video di 30 secondi aumenta del 70% le probabilità di essere contattato. Non serve essere perfetti!",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            // leggermente più scuro per miglior contrasto (mantiene tinta primaria arancione)
+            color = AccentText
         )
-        VideoRecorderPanel(viewModel = viewModel)
-        TextButton(onClick = viewModel::onNextStep, modifier = Modifier.fillMaxWidth()) {
-            Text("Preferisco non registrare il video, invia comunque")
+
+        when {
+            uiState.videoOptOut -> {
+                // feedback simile al pannello registrato ma per l'opt-out
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = null, tint = AccentText, modifier = Modifier.size(52.dp))
+                        Text("Hai scelto di non registrare il video", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            "Puoi comunque inviare la candidatura. Se cambi idea, premi 'Ho cambiato idea, fammi registrare' per registrare il video.",
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            color = AccentText
+                        )
+                    }
+                }
+                Button(onClick = viewModel::onRetakeVideo, modifier = Modifier.fillMaxWidth()) {
+                    Text("Ho cambiato idea, fammi registrare")
+                }
+            }
+
+            uiState.videoState == VideoRecordingState.RECORDED -> {
+                VideoRecordedPanel(viewModel = viewModel)
+            }
+
+            else -> {
+                VideoRecorderPanel(viewModel = viewModel)
+                // mostra il pulsante di skip solo se non si sta registrando un video
+                if (uiState.videoState != VideoRecordingState.RECORDING) {
+                    TextButton(
+                        onClick = viewModel::onSkipVideo,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Salta per ora", color = AccentText)
+                    }
+                }
+            }
         }
     }
 }
@@ -368,7 +451,7 @@ private fun VideoRecorderPanel(viewModel: ApplicationViewModel) {
                 countdownSeconds = uiState.videoCountdownSeconds,
                 onStop = viewModel::onStopRecordingManually
             )
-            VideoRecordingState.RECORDED -> VideoRecordedPanel(onRetake = viewModel::onRetakeVideo)
+            VideoRecordingState.RECORDED -> VideoRecordedPanel(viewModel = viewModel)
         }
     }
 }
@@ -383,10 +466,10 @@ private fun VideoIdlePanel(onStartRecording: () -> Unit) {
                 "2️⃣  La tua esperienza: ruoli e settori in cui hai lavorato",
                 "3️⃣  Perché vuoi questa posizione: motivazione e disponibilità"
             ).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
-            Text(
+             Text(
                 "Non preoccuparti di essere perfetto. La spontaneità è apprezzata!",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = AccentText,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -460,26 +543,198 @@ private fun VideoRecordingPanel(countdownSeconds: Int, onStop: () -> Unit) {
 }
 
 @Composable
-private fun VideoRecordedPanel(onRetake: () -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)), modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(52.dp))
-            Text("Video registrato! 🎉", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+private fun VideoRecordedPanel(viewModel: ApplicationViewModel) {
+    val uiState by viewModel.uiState
+    val onRetake = viewModel::onRetakeVideo
+
+    // If user already accepted the video, show a green confirmation message in place of the review
+    if (uiState.videoAccepted) {
+        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)), modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(52.dp))
+                    Text("Video registrato! 🎉", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                    Text(
+                        "Ottimo lavoro! Il tuo video di presentazione è pronto per essere inviato insieme alla candidatura.",
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFF388E3C)
+                    )
+                }
+            }
+
+            // Allow user to change their mind and re-record after accepting
+            OutlinedButton(
+                onClick = onRetake,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)
+            ) {
+                Text("Registra di nuovo")
+            }
+        }
+        return
+    }
+
+    // --- Mock video player (sfondo nero) ---
+    val totalSeconds = 30
+    var progress by remember { mutableStateOf(0f) } // 0..1
+    var isPlaying by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            while (isPlaying && progress < 1f) {
+                delay(300L)
+                val increment = (300f / 1000f) / totalSeconds.toFloat()
+                progress = (progress + increment).coerceAtMost(1f)
+                if (progress >= 1f) isPlaying = false
+            }
+        }
+    }
+
+    fun formatTime(seconds: Int): String {
+        val m = seconds / 60
+        val s = seconds % 60
+        return "%d:%02d".format(m, s)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(16f / 9f)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        // Always show overlay controls while reviewing so user can replay/seek
+        val isFinished = progress >= 1f
+        IconButton(
+            onClick = {
+                if (isFinished) {
+                    progress = 0f
+                    isPlaying = true
+                } else {
+                    isPlaying = !isPlaying
+                }
+            },
+            modifier = Modifier
+                .size(72.dp)
+                .background(Color.Black.copy(alpha = 0.35f), CircleShape)
+        ) {
+            Icon(
+                when {
+                    isFinished -> Icons.Default.Replay
+                    isPlaying -> Icons.Default.Pause
+                    else -> Icons.Default.PlayArrow
+                },
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(36.dp)
+            )
+        }
+
+        // Bottom controls: time / progress track / total
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val elapsed = (progress * totalSeconds).toInt()
+            Text(formatTime(elapsed), color = Color.White, style = MaterialTheme.typography.labelSmall)
+            var barWidthPx by remember { mutableStateOf(0) }
+            var draggingAllowed by remember { mutableStateOf(false) }
+            val density = LocalDensity.current
+            val touchSlopPx = with(density) { 24.dp.toPx() }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 8.dp, end = 8.dp, top = 6.dp)
+                    .height(6.dp)
+                    .onSizeChanged { barWidthPx = it.width }
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(AccentText.copy(alpha = 0.12f))
+                    .pointerInput(Unit) {
+                        detectTapGestures { offset: Offset ->
+                            if (barWidthPx > 0) {
+                                val newProgress = (offset.x.coerceIn(0f, barWidthPx.toFloat()) / barWidthPx.toFloat())
+                                progress = newProgress.coerceIn(0f, 1f)
+                                isPlaying = false
+                            }
+                        }
+                    }
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { offset: Offset ->
+                                if (barWidthPx > 0) {
+                                    val filledEnd = progress * barWidthPx
+                                    draggingAllowed = offset.x <= (filledEnd + touchSlopPx)
+                                } else draggingAllowed = false
+                            },
+                            onDrag = { change: PointerInputChange, _ ->
+                                if (!draggingAllowed) return@detectDragGestures
+                                val x = change.position.x
+                                if (barWidthPx > 0) {
+                                    val newProgress = (x.coerceIn(0f, barWidthPx.toFloat()) / barWidthPx.toFloat())
+                                    progress = newProgress.coerceAtMost(1f).coerceAtLeast(0f)
+                                    isPlaying = false
+                                }
+                            },
+                            onDragEnd = { draggingAllowed = false },
+                            onDragCancel = { draggingAllowed = false }
+                        )
+                    }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(progress)
+                        .background(AccentText)
+                )
+            }
+            Text(formatTime(totalSeconds), color = Color.White, style = MaterialTheme.typography.labelSmall)
+        }
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    // If we are awaiting user's decision, show prompt with two buttons and disable sending until user chooses
+    if (uiState.videoAwaitingUploadConfirmation) {
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Vuoi caricare il video?", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(onClick = { viewModel.onRejectVideo() }) {
+                        Icon(Icons.Default.Close, contentDescription = null, tint = AccentText)
+                        Text("  Rifiuta", color = AccentText)
+                    }
+                    Button(onClick = { viewModel.onAcceptVideo() }) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null)
+                        Text("  Accetta")
+                    }
+                }
+            }
+        }
+    } else {
+        // default: allow retake and show the "Sei pronto!" nudger
+        OutlinedButton(
+            onClick = onRetake,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)
+        ) {
+            Text("Registra di nuovo")
+        }
+
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
             Text(
-                "Ottimo lavoro! Il tuo video è pronto per essere inviato insieme alla candidatura.",
-                style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, color = Color(0xFF388E3C)
+                text = "Sei pronto! Clicca \"Invia Candidatura\" per completare il processo.",
+                modifier = Modifier.padding(12.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
         }
     }
-    OutlinedButton(onClick = onRetake, modifier = Modifier.fillMaxWidth()) {
-        Text("🔄  Non mi piace, registro di nuovo")
-    }
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-        Text(
-            text = "💪 Sei pronto! Clicca \"Invia Candidatura\" per completare il processo.",
-            modifier = Modifier.padding(12.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
-        )
-    }
 }
+

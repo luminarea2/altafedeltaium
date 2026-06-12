@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.altafedeltium.ui.viewmodel.LoginViewModel
+import com.example.altafedeltium.ui.theme.AccentText
 
 @Composable
 fun LoginScreen(
@@ -49,7 +51,12 @@ fun LoginScreen(
                 uiState.emailError?.let { Text(it) }
             },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            colors = OutlinedTextFieldDefaults.colors(
+                cursorColor = AccentText,
+                focusedBorderColor = AccentText,
+                focusedLabelColor = AccentText
+            )
         )
 
         OutlinedTextField(
@@ -62,7 +69,12 @@ fun LoginScreen(
             },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            colors = OutlinedTextFieldDefaults.colors(
+                cursorColor = AccentText,
+                focusedBorderColor = AccentText,
+                focusedLabelColor = AccentText
+            )
         )
 
         uiState.formError?.let {
@@ -84,7 +96,7 @@ fun LoginScreen(
             onClick = onGoToRegister,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Non hai un account? Registrati")
+            Text("Non hai un account? Registrati", color = AccentText)
         }
     }
 }

@@ -33,6 +33,10 @@ data class ApplicationUiState(
     // Step 3 – Video Presentazione
     val videoState: VideoRecordingState = VideoRecordingState.IDLE,
     val videoCountdownSeconds: Int = 30,
+    val videoOptOut: Boolean = false,
+    // new flags for upload confirmation flow
+    val videoAwaitingUploadConfirmation: Boolean = false,
+    val videoAccepted: Boolean = false,
 
     // Conferma invio
     val showConfirmDialog: Boolean = false,
@@ -129,19 +133,51 @@ class ApplicationViewModel : ViewModel() {
         } else {
             _uiState.value = _uiState.value.copy(
                 videoState = VideoRecordingState.RECORDED,
-                videoCountdownSeconds = 0
+                videoCountdownSeconds = 0,
+                // when recording finishes, wait for user confirmation to upload
+                videoAwaitingUploadConfirmation = true,
+                videoAccepted = false
             )
         }
     }
 
     fun onStopRecordingManually() {
-        _uiState.value = _uiState.value.copy(videoState = VideoRecordingState.RECORDED)
+        _uiState.value = _uiState.value.copy(
+            videoState = VideoRecordingState.RECORDED,
+            videoOptOut = false,
+            videoAwaitingUploadConfirmation = true,
+            videoAccepted = false
+        )
     }
 
     fun onRetakeVideo() {
         _uiState.value = _uiState.value.copy(
             videoState = VideoRecordingState.IDLE,
-            videoCountdownSeconds = 30
+            videoCountdownSeconds = 30,
+            videoOptOut = false,
+            videoAwaitingUploadConfirmation = false,
+            videoAccepted = false
+        )
+    }
+
+    fun onSkipVideo() {
+        _uiState.value = _uiState.value.copy(videoOptOut = true, videoAwaitingUploadConfirmation = false)
+    }
+
+    // User accepts that the recorded video should be uploaded/attached to the application
+    fun onAcceptVideo() {
+        _uiState.value = _uiState.value.copy(videoAccepted = true, videoAwaitingUploadConfirmation = false)
+    }
+
+    // User rejects uploading the recorded video (opt-out)
+    fun onRejectVideo() {
+        // Return to IDLE (show the "Registra Video" button) when the user rejects uploading the current video
+        _uiState.value = _uiState.value.copy(
+            videoState = VideoRecordingState.IDLE,
+            videoCountdownSeconds = 30,
+            videoOptOut = false,
+            videoAwaitingUploadConfirmation = false,
+            videoAccepted = false
         )
     }
 
@@ -149,7 +185,11 @@ class ApplicationViewModel : ViewModel() {
 
     fun onNextStep() {
         when (_uiState.value.currentStep) {
-            1 -> if (validateStepOne()) _uiState.value = _uiState.value.copy(currentStep = 2)
+            1 -> {
+                if (validateStepOne()) {
+                    _uiState.value = _uiState.value.copy(currentStep = 2)
+                }
+            }
             2 -> _uiState.value = _uiState.value.copy(currentStep = 3)
             3 -> _uiState.value = _uiState.value.copy(showConfirmDialog = true)
         }

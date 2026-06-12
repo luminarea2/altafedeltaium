@@ -43,6 +43,7 @@ sealed class AppDestination(
         fun createRoute(productId: Int) = "product/$productId"
     }
     data object Favorites : AppDestination(route = "favorites", label = "Preferiti")
+    data object FavoritesJobs : AppDestination(route = "favorites_jobs", label = "Salvati Lavoro")
     data object Checkout : AppDestination(route = "checkout", label = "Checkout")
     data object OrderHistory : AppDestination(route = "order_history", label = "Storico ordini")
 

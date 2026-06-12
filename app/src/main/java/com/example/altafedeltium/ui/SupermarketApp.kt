@@ -33,6 +33,7 @@ import com.example.altafedeltium.ui.screens.home.ProductDetailScreen
 import com.example.altafedeltium.ui.screens.profile.OrderHistoryScreen
 import com.example.altafedeltium.ui.screens.profile.ProfileScreen
 import com.example.altafedeltium.ui.screens.work.WorkScreen
+import com.example.altafedeltium.ui.screens.work.JobFavoritesScreen
 import com.example.altafedeltium.ui.viewmodel.AuthSessionStore
 import com.example.altafedeltium.ui.viewmodel.HomeViewModel
 import com.example.altafedeltium.ui.viewmodel.JobSearchViewModel
@@ -158,6 +159,8 @@ private fun SupermarketNavHost(
                 homeViewModel = homeViewModel,
                 onOpenOrderHistory = { navController.navigate(AppDestination.OrderHistory.route) },
                 onLogout = {
+                    // Clear transient app state tied to the previous user
+                    homeViewModel.clearSession()
                     AuthSessionStore.logout()
                     navController.navigate(AppDestination.Login.route) {
                         popUpTo(navController.graph.startDestinationId) { inclusive = true }
@@ -191,7 +194,10 @@ private fun SupermarketNavHost(
                     navController.navigate(AppDestination.ProductDetail.createRoute(productId))
                 },
                 onRemoveFavorite = { homeViewModel.toggleFavorite(it) },
-                onAddToCart = { homeViewModel.addToCart(it) }
+                onAddToCart = { homeViewModel.addToCart(it) },
+                onIncreaseQuantity = { homeViewModel.increaseQuantity(it) },
+                onDecreaseQuantity = { homeViewModel.decreaseQuantity(it) },
+                cartQuantityFor = { homeViewModel.cartItemQuantity(it) }
             )
         }
         composable(AppDestination.Checkout.route) {
@@ -206,7 +212,14 @@ private fun SupermarketNavHost(
         composable(AppDestination.OrderHistory.route) {
             OrderHistoryScreen(
                 homeViewModel = homeViewModel,
-                onBack = { navController.popBackStack() }
+                onBack = {
+                    // Navigate back to the cart (which should be empty after placing the order)
+                    navController.navigate(AppDestination.Cart.route) {
+                        // Remove the checkout screen from the back stack so Back from Cart doesn't return to it
+                        popUpTo(AppDestination.Checkout.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
         composable(AppDestination.Work.route) {
@@ -218,6 +231,20 @@ private fun SupermarketNavHost(
                 onMyApplications = {
                     navController.navigate(AppDestination.MyApplications.route)
                 }
+                ,
+                onOpenFavoritesJobs = {
+                    navController.navigate(AppDestination.FavoritesJobs.route)
+                }
+            )
+        }
+
+        composable(AppDestination.FavoritesJobs.route) {
+            JobFavoritesScreen(
+                favorites = jobSearchViewModel.favoriteJobs(),
+                onBack = { navController.popBackStack() },
+                onOpenJob = { jobId -> navController.navigate(AppDestination.Apply.createRoute(jobId)) },
+                onToggleFavorite = { jobSearchViewModel.toggleFavorite(it) },
+                onApply = { jobId -> navController.navigate(AppDestination.Apply.createRoute(jobId)) }
             )
         }
         composable(
@@ -232,7 +259,8 @@ private fun SupermarketNavHost(
                     navController.navigate(AppDestination.MyApplications.route) {
                         popUpTo(AppDestination.Work.route)
                     }
-                }
+                },
+                homeViewModel = homeViewModel
             )
         }
         composable(AppDestination.MyApplications.route) {

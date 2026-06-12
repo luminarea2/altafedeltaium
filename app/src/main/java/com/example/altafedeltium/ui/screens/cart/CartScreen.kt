@@ -43,6 +43,25 @@ fun CartScreen(
                         .padding(16.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
+                        val subtotal = homeViewModel.subtotal()
+                        val deliveryFee = homeViewModel.deliveryFee()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Subtotale:", style = MaterialTheme.typography.bodySmall)
+                            Text("EUR ${"%.2f".format(subtotal)}", style = MaterialTheme.typography.bodySmall)
+                        }
+                        if (deliveryFee > 0.0) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Consegna:", style = MaterialTheme.typography.bodySmall)
+                                Text("EUR ${"%.2f".format(deliveryFee)}", style = MaterialTheme.typography.bodySmall, color = com.example.altafedeltium.ui.theme.AccentText)
+                            }
+                        }
+                        Spacer(modifier = Modifier.padding(8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
@@ -129,3 +148,4 @@ fun CartScreen(
         }
     }
 }
+

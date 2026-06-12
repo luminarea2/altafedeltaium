@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.altafedeltium.ui.viewmodel.RegisterViewModel
+import com.example.altafedeltium.ui.theme.AccentText
 
 @Composable
 fun RegisterScreen(
@@ -46,7 +48,12 @@ fun RegisterScreen(
             supportingText = {
                 uiState.firstNameError?.let { Text(it) }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                cursorColor = AccentText,
+                focusedBorderColor = AccentText,
+                focusedLabelColor = AccentText
+            )
         )
 
         OutlinedTextField(
@@ -57,7 +64,12 @@ fun RegisterScreen(
             supportingText = {
                 uiState.lastNameError?.let { Text(it) }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                cursorColor = AccentText,
+                focusedBorderColor = AccentText,
+                focusedLabelColor = AccentText
+            )
         )
 
         OutlinedTextField(
@@ -68,7 +80,12 @@ fun RegisterScreen(
             supportingText = {
                 uiState.emailError?.let { Text(it) }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                cursorColor = AccentText,
+                focusedBorderColor = AccentText,
+                focusedLabelColor = AccentText
+            )
         )
 
         OutlinedTextField(
@@ -80,7 +97,12 @@ fun RegisterScreen(
                 uiState.passwordError?.let { Text(it) }
             },
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                cursorColor = AccentText,
+                focusedBorderColor = AccentText,
+                focusedLabelColor = AccentText
+            )
         )
 
         OutlinedTextField(
@@ -92,7 +114,12 @@ fun RegisterScreen(
                 uiState.confirmPasswordError?.let { Text(it) }
             },
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                cursorColor = AccentText,
+                focusedBorderColor = AccentText,
+                focusedLabelColor = AccentText
+            )
         )
 
         uiState.formError?.let {
@@ -114,7 +141,7 @@ fun RegisterScreen(
             onClick = onGoToLogin,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Hai gia un account? Torna al login")
+            Text("Hai gia un account? Torna al login", color = AccentText)
         }
     }
 }

@@ -24,6 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -31,7 +33,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -42,6 +43,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.PaddingValues
 import com.example.altafedeltium.data.model.Product
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,30 +53,26 @@ fun FavoritesScreen(
     onBack: () -> Unit,
     onOpenProduct: (Int) -> Unit,
     onRemoveFavorite: (Int) -> Unit,
-    onAddToCart: (Product) -> Unit
+    onAddToCart: (Product) -> Unit,
+    onIncreaseQuantity: (Int) -> Unit,
+    onDecreaseQuantity: (Int) -> Unit,
+    cartQuantityFor: (Int) -> Int
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Preferiti") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
-                    }
+    Column(modifier = Modifier.fillMaxSize()) {
+        TopAppBar(
+            title = { Text("Preferiti") },
+            navigationIcon = {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                 }
-            )
-        }
-    ) { innerPadding ->
+            }
+        )
+
         if (favorites.isEmpty()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(
-                        top = innerPadding.calculateTopPadding(),
-                        start = 24.dp,
-                        end = 24.dp,
-                        bottom = innerPadding.calculateBottomPadding()
-                    ),
+                    .padding(start = 24.dp, end = 24.dp),
                 verticalArrangement = Arrangement.Center
             ) {
                 Text("Non hai ancora preferiti", style = MaterialTheme.typography.titleMedium)
@@ -84,19 +82,18 @@ fun FavoritesScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(
-                        top = innerPadding.calculateTopPadding(),
-                        start = 16.dp,
-                        end = 16.dp,
-                        bottom = innerPadding.calculateBottomPadding()
-                    ),
+                    .padding(start = 16.dp, end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(favorites, key = { it.id }) { product ->
+                    val cartQuantity = cartQuantityFor(product.id)
                     FavoriteProductCard(
                         product = product,
                         onOpen = { onOpenProduct(product.id) },
                         onAddToCart = { onAddToCart(product) },
+                        onIncreaseQuantity = { onIncreaseQuantity(product.id) },
+                        onDecreaseQuantity = { onDecreaseQuantity(product.id) },
+                        cartQuantity = cartQuantity,
                         onRemove = { onRemoveFavorite(product.id) }
                     )
                 }
@@ -110,6 +107,9 @@ private fun FavoriteProductCard(
     product: Product,
     onOpen: () -> Unit,
     onAddToCart: () -> Unit,
+    onIncreaseQuantity: () -> Unit,
+    onDecreaseQuantity: () -> Unit,
+    cartQuantity: Int,
     onRemove: () -> Unit
 ) {
     Card(
@@ -161,13 +161,62 @@ private fun FavoriteProductCard(
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onAddToCart) {
-                    Icon(
-                        imageVector = Icons.Default.ShoppingCart,
-                        contentDescription = "Aggiungi al carrello",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                if (cartQuantity <= 0) {
+                    Button(
+                        onClick = onAddToCart,
+                        enabled = product.stock > 0,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.ShoppingCart,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .background(
+                                MaterialTheme.colorScheme.secondaryContainer,
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 4.dp)
+                    ) {
+                        IconButton(
+                            onClick = onDecreaseQuantity,
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Remove,
+                                contentDescription = "Riduci",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Text(
+                            text = cartQuantity.toString(),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                        IconButton(
+                            onClick = onIncreaseQuantity,
+                            enabled = product.stock > 0,
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Aumenta",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                 }
+
                 IconButton(onClick = onRemove) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -179,4 +228,3 @@ private fun FavoriteProductCard(
         }
     }
 }
-

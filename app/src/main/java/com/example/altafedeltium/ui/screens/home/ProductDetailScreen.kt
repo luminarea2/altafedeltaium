@@ -21,7 +21,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -59,8 +58,13 @@ fun ProductDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val isAddingToCart = remember { mutableStateOf(value = false) }
 
-    Scaffold(
-        topBar = {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             TopAppBar(
                 title = { Text(product.name) },
                 navigationIcon = {
@@ -77,20 +81,7 @@ fun ProductDetailScreen(
                     }
                 }
             )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
-         Column(
-             modifier = Modifier
-                 .fillMaxSize()
-                 .padding(
-                     top = innerPadding.calculateTopPadding(),
-                     start = 16.dp,
-                     end = 16.dp,
-                     bottom = innerPadding.calculateBottomPadding()
-                 ),
-             verticalArrangement = Arrangement.spacedBy(12.dp)
-         ) {
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -176,6 +167,7 @@ fun ProductDetailScreen(
                 }
             }
         }
+
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
-

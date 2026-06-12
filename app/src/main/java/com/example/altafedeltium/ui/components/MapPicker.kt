@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -38,6 +39,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
+import com.example.altafedeltium.ui.theme.AccentText
 import kotlin.math.roundToInt
 
 @Composable
@@ -147,7 +149,7 @@ fun MapPickerDialog(
                     modifier = Modifier.padding(top = 2.dp)
                 )
 
-                OutlinedButton(onClick = { resetSelection() }, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { resetSelection() }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)) {
                     Text("Riporta al centro")
                 }
             }
@@ -158,7 +160,7 @@ fun MapPickerDialog(
             }) { Text("Conferma posizione") }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) { Text("Annulla") }
+            OutlinedButton(onClick = onDismiss, colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)) { Text("Annulla") }
         }
     )
 }

@@ -33,12 +33,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +62,7 @@ import com.example.altafedeltium.data.model.Product
 import com.example.altafedeltium.data.model.SortDirection
 import com.example.altafedeltium.data.model.SortField
 import com.example.altafedeltium.ui.viewmodel.HomeViewModel
+import com.example.altafedeltium.ui.theme.AccentText
 
 @Composable
 fun HomeScreen(
@@ -88,7 +92,7 @@ fun HomeScreen(
         item {
             SearchFiltersCard(
                 searchQuery = uiState.searchQuery,
-                selectedCategory = uiState.selectedCategory,
+                selectedCategories = uiState.selectedCategories,
                 categories = homeViewModel.categories,
                 selectedSortField = uiState.selectedSortField,
                 selectedSortDirection = uiState.selectedSortDirection,
@@ -98,7 +102,8 @@ fun HomeScreen(
                 onCategorySelected = homeViewModel::onCategorySelected,
                 onSortFieldChanged = homeViewModel::onSortFieldChanged,
                 onSortDirectionChanged = homeViewModel::onSortDirectionChanged,
-                onMaxPriceChanged = { homeViewModel.onMaxPriceChanged(it) }
+                onMaxPriceChanged = { homeViewModel.onMaxPriceChanged(it) },
+                onResetFilters = homeViewModel::resetFilters
             )
         }
 
@@ -149,7 +154,7 @@ private fun HomeHeaderCard(
 @Composable
 private fun SearchFiltersCard(
     searchQuery: String,
-    selectedCategory: String,
+    selectedCategories: Set<String>,
     categories: List<String>,
     selectedSortField: SortField,
     selectedSortDirection: SortDirection,
@@ -159,10 +164,17 @@ private fun SearchFiltersCard(
     onCategorySelected: (String) -> Unit,
     onSortFieldChanged: (SortField) -> Unit,
     onSortDirectionChanged: (SortDirection) -> Unit,
-    onMaxPriceChanged: (Double) -> Unit
+    onMaxPriceChanged: (Double) -> Unit,
+    onResetFilters: () -> Unit
 ) {
     var showFiltersPopup by remember { mutableStateOf(false) }
-    val activeFiltersText = "${selectedSortField.label} (${selectedSortDirection.label})  •  $selectedCategory"
+    
+    // Verificare se ci sono filtri attivi (diversi dai default)
+    val hasActiveFilters = selectedCategories != setOf("Tutti") || 
+        selectedSortField != SortField.NAME || 
+        selectedSortDirection != SortDirection.ASC ||
+        searchQuery.isNotBlank() ||
+        maxPriceFilter < maxPriceLimit
 
     Card(
         modifier = Modifier
@@ -196,20 +208,151 @@ private fun SearchFiltersCard(
                     modifier = Modifier.fillMaxWidth(0.82f),
                     label = { Text("Cerca prodotto") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    singleLine = true
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        cursorColor = AccentText,
+                        focusedBorderColor = AccentText,
+                        focusedLabelColor = AccentText
+                    )
                 )
                 Button(onClick = { showFiltersPopup = true }, modifier = Modifier.size(52.dp), contentPadding = PaddingValues(0.dp)) {
                     Icon(Icons.Default.Tune, contentDescription = "Apri filtri")
                 }
             }
+        }
+    }
 
-            Text("Filtri attivi: $activeFiltersText", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+    // ── Filtri Attivi (mostra solo se ci sono filtri) ──────────────────
+    if (hasActiveFilters) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Filtri attivi",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.SemiBold
+                )
+                TextButton(
+                    onClick = onResetFilters,
+                    modifier = Modifier.height(28.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Resetta filtri",
+                        modifier = Modifier.size(14.dp),
+                        tint = AccentText
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Resetta tutto", style = MaterialTheme.typography.labelSmall, color = AccentText)
+                }
+            }
+            
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // Mostra le categorie selezionate (escluso "Tutti")
+                val categorieMostrate = selectedCategories.filter { it != "Tutti" }
+                items(categorieMostrate) { category ->
+                    AssistChip(
+                        onClick = { onCategorySelected(category) },
+                        label = { Text(category) },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = AccentText
+                            )
+                        },
+                        modifier = Modifier.height(32.dp)
+                    )
+                }
+                if (selectedSortField != SortField.NAME) {
+                    item {
+                        AssistChip(
+                            onClick = { onSortFieldChanged(SortField.NAME) },
+                            label = { Text("Ordina: ${selectedSortField.label}") },
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = AccentText
+                                )
+                            },
+                            modifier = Modifier.height(32.dp)
+                        )
+                    }
+                }
+                if (selectedSortDirection != SortDirection.ASC) {
+                    item {
+                        AssistChip(
+                            onClick = { onSortDirectionChanged(SortDirection.ASC) },
+                            label = { Text(selectedSortDirection.label) },
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = AccentText
+                                )
+                            },
+                            modifier = Modifier.height(32.dp)
+                        )
+                    }
+                }
+                if (searchQuery.isNotBlank()) {
+                    item {
+                        AssistChip(
+                            onClick = { onSearchQueryChanged("") },
+                            label = { Text("\"$searchQuery\"") },
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = AccentText
+                                )
+                            },
+                            modifier = Modifier.height(32.dp)
+                        )
+                    }
+                }
+                if (maxPriceFilter < maxPriceLimit) {
+                    item {
+                        AssistChip(
+                            onClick = { onMaxPriceChanged(maxPriceLimit) },
+                            label = { Text("Max: EUR ${"%.2f".format(maxPriceFilter)}") },
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = AccentText
+                                )
+                            },
+                            modifier = Modifier.height(32.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 
     if (showFiltersPopup) {
         FiltersPopupDialog(
-            selectedCategory = selectedCategory,
+            selectedCategories = selectedCategories,
             categories = categories,
             selectedSortField = selectedSortField,
             selectedSortDirection = selectedSortDirection,
@@ -226,7 +369,7 @@ private fun SearchFiltersCard(
 
 @Composable
 private fun FiltersPopupDialog(
-    selectedCategory: String,
+    selectedCategories: Set<String>,
     categories: List<String>,
     selectedSortField: SortField,
     selectedSortDirection: SortDirection,
@@ -291,7 +434,7 @@ private fun FiltersPopupDialog(
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(categories) { category ->
                             FilterChip(
-                                selected = category == selectedCategory,
+                                selected = selectedCategories.contains(category),
                                 onClick = { onCategorySelected(category) },
                                 label = { Text(category, style = MaterialTheme.typography.bodyLarge) }
                             )
@@ -404,7 +547,7 @@ private fun ProductCard(
                         Text(
                             text = "EUR ${"%.2f".format(product.price)}",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = com.example.altafedeltium.ui.theme.AccentText,
                             fontWeight = FontWeight.ExtraBold
                         )
                     }

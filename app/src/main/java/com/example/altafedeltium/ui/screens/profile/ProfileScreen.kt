@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,8 +32,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,13 +53,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
+import com.example.altafedeltium.ui.theme.AccentText
+import com.example.altafedeltium.ui.theme.OrangePrimary
+import com.example.altafedeltium.ui.theme.OrangeOnPrimary
 import com.example.altafedeltium.data.model.Address
 import com.example.altafedeltium.data.model.Order
 import com.example.altafedeltium.ui.viewmodel.HomeViewModel
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 
-private val ProfileAccentColor = Color(0xFFFF9800)
+// ...existing code...
 
 private enum class ProfileSection(val title: String) {
     PERSONAL_DATA("I miei dati"),
@@ -69,14 +80,22 @@ fun ProfileScreen(
     val uiState by homeViewModel.uiState
     var selectedSection by rememberSaveable { mutableStateOf(ProfileSection.PERSONAL_DATA) }
     var showLogoutConfirmation by rememberSaveable { mutableStateOf(false) }
+    // show a confirmation dialog after saving profile data
+    var showProfileSavedDialog by rememberSaveable { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    LazyColumn(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .background(MaterialTheme.colorScheme.background)
     ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentPadding = PaddingValues(0.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
         item {
             ProfileHeroCard(
                 username = uiState.userProfile.username,
@@ -102,7 +121,11 @@ fun ProfileScreen(
                     phone = uiState.userProfile.phone,
                     loyaltyCode = uiState.userProfile.loyaltyCode,
                     memberSince = uiState.userProfile.memberSince,
-                    onSave = homeViewModel::updateUserProfile
+                    // wrap the viewmodel update so we can show feedback to the user
+                    onSave = { f, l, e, p ->
+                        homeViewModel.updateUserProfile(f, l, e, p)
+                        showProfileSavedDialog = true
+                    }
                 )
 
                 ProfileSection.ADDRESSES -> AddressesSection(
@@ -138,6 +161,12 @@ fun ProfileScreen(
                 Text("Logout")
             }
         }
+        }
+
+        // place SnackbarHost above the bottom navigation (bottom-center)
+        Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+            SnackbarHost(hostState = snackbarHostState)
+        }
     }
 
     if (showLogoutConfirmation) {
@@ -152,6 +181,14 @@ fun ProfileScreen(
             },
             onDismiss = { showLogoutConfirmation = false }
         )
+    }
+
+    // show a small snackbar (same style used when adding a product to cart) after save
+    LaunchedEffect(showProfileSavedDialog) {
+        if (showProfileSavedDialog) {
+            snackbarHostState.showSnackbar("✓ Dati aggiornati correttamente!", duration = SnackbarDuration.Short)
+            showProfileSavedDialog = false
+        }
     }
 }
 
@@ -213,7 +250,7 @@ private fun ProfileHeroCard(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Modifica profilo",
-                            tint = ProfileAccentColor
+                            tint = AccentText
                         )
                     }
                 }
@@ -243,54 +280,74 @@ private fun ProfileMenuCard(
                 title = ProfileSection.PERSONAL_DATA.title,
                 isSelected = selectedSection == ProfileSection.PERSONAL_DATA,
                 icon = Icons.Default.Person,
-                onClick = { onSectionSelected(ProfileSection.PERSONAL_DATA) }
+                onClick = { onSectionSelected(ProfileSection.PERSONAL_DATA) },
+                rounded = RoundedCornerType.TOP
             )
             HorizontalDivider(color = Color(0x66B76E38))
             ProfileMenuRow(
                 title = ProfileSection.ADDRESSES.title,
                 isSelected = selectedSection == ProfileSection.ADDRESSES,
                 icon = Icons.Default.Place,
-                onClick = { onSectionSelected(ProfileSection.ADDRESSES) }
+                onClick = { onSectionSelected(ProfileSection.ADDRESSES) },
+                rounded = RoundedCornerType.NONE
             )
             HorizontalDivider(color = Color(0x66B76E38))
             ProfileMenuRow(
                 title = ProfileSection.ORDERS.title,
                 isSelected = selectedSection == ProfileSection.ORDERS,
                 icon = Icons.Default.ShoppingBag,
-                onClick = { onSectionSelected(ProfileSection.ORDERS) }
+                onClick = { onSectionSelected(ProfileSection.ORDERS) },
+                rounded = RoundedCornerType.BOTTOM
             )
         }
     }
 }
+
+private enum class RoundedCornerType { ALL, TOP, BOTTOM, NONE }
 
 @Composable
 private fun ProfileMenuRow(
     title: String,
     isSelected: Boolean,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    rounded: RoundedCornerType = RoundedCornerType.ALL
 ) {
+    val shape = when (rounded) {
+        RoundedCornerType.ALL -> RoundedCornerShape(12.dp)
+        RoundedCornerType.TOP -> RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomEnd = 0.dp, bottomStart = 0.dp)
+        RoundedCornerType.BOTTOM -> RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomEnd = 12.dp, bottomStart = 12.dp)
+        RoundedCornerType.NONE -> RoundedCornerShape(0.dp)
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .background(if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent)
+                .background(
+                color = if (isSelected) OrangePrimary else Color.Transparent,
+                shape = shape
+            )
             .padding(horizontal = 16.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = if (isSelected) OrangeOnPrimary else MaterialTheme.colorScheme.onSecondaryContainer
+        )
         Text(
             text = title,
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 14.dp),
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
+            color = if (isSelected) OrangeOnPrimary else MaterialTheme.colorScheme.onSecondaryContainer
         )
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+            tint = if (isSelected) OrangeOnPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier.size(16.dp)
         )
     }
@@ -330,28 +387,48 @@ private fun PersonalDataSection(
                 onValueChange = { editedFirstName = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Nome") },
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    cursorColor = AccentText,
+                    focusedBorderColor = AccentText,
+                    focusedLabelColor = AccentText
+                )
             )
             OutlinedTextField(
                 value = editedLastName,
                 onValueChange = { editedLastName = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Cognome") },
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    cursorColor = AccentText,
+                    focusedBorderColor = AccentText,
+                    focusedLabelColor = AccentText
+                )
             )
             OutlinedTextField(
                 value = editedEmail,
                 onValueChange = { editedEmail = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Email") },
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    cursorColor = AccentText,
+                    focusedBorderColor = AccentText,
+                    focusedLabelColor = AccentText
+                )
             )
             OutlinedTextField(
                 value = editedPhone,
                 onValueChange = { editedPhone = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Telefono") },
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    cursorColor = AccentText,
+                    focusedBorderColor = AccentText,
+                    focusedLabelColor = AccentText
+                )
             )
 
             Card(
@@ -379,7 +456,8 @@ private fun PersonalDataSection(
             Button(
                 onClick = { onSave(editedFirstName, editedLastName, editedEmail, editedPhone) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = editedFirstName.isNotBlank() && editedLastName.isNotBlank() && editedEmail.isNotBlank() && editedPhone.isNotBlank()
+                // allow saving profile even if phone is still empty
+                enabled = editedFirstName.isNotBlank() && editedLastName.isNotBlank() && editedEmail.isNotBlank()
             ) {
                 Text("Salva modifiche")
             }
@@ -421,7 +499,8 @@ private fun AddressesSection(
                         showEditor = true
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    // testo più scuro per miglior contrasto sullo sfondo grigio
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)
                 ) {
                     Text("Aggiungi indirizzo")
                 }
@@ -514,16 +593,16 @@ private fun AddressEditorCard(
                 fontWeight = FontWeight.SemiBold
             )
 
-            OutlinedTextField(value = label, onValueChange = { label = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Etichetta") })
-            OutlinedTextField(value = street, onValueChange = { street = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Via e numero civico") })
-            OutlinedTextField(value = city, onValueChange = { city = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Città") })
-            OutlinedTextField(value = zipCode, onValueChange = { zipCode = it }, modifier = Modifier.fillMaxWidth(), label = { Text("CAP") })
+            OutlinedTextField(value = label, onValueChange = { label = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Etichetta") }, colors = OutlinedTextFieldDefaults.colors(cursorColor = AccentText, focusedBorderColor = AccentText, focusedLabelColor = AccentText))
+            OutlinedTextField(value = street, onValueChange = { street = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Via e numero civico") }, colors = OutlinedTextFieldDefaults.colors(cursorColor = AccentText, focusedBorderColor = AccentText, focusedLabelColor = AccentText))
+            OutlinedTextField(value = city, onValueChange = { city = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Città") }, colors = OutlinedTextFieldDefaults.colors(cursorColor = AccentText, focusedBorderColor = AccentText, focusedLabelColor = AccentText))
+            OutlinedTextField(value = zipCode, onValueChange = { zipCode = it }, modifier = Modifier.fillMaxWidth(), label = { Text("CAP") }, colors = OutlinedTextFieldDefaults.colors(cursorColor = AccentText, focusedBorderColor = AccentText, focusedLabelColor = AccentText))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedButton(
                     onClick = { showMapPicker = true },
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
                 ) {
                     Icon(Icons.Default.Place, contentDescription = null)
                     Text("  Verifica posizione su mappa")
@@ -531,7 +610,7 @@ private fun AddressEditorCard(
                 OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)
                 ) {
                     Text("Annulla")
                 }
@@ -577,51 +656,57 @@ private fun AddressCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(address.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                // Mostriamo l'etichetta e (se presente) il badge "Predefinito" sulla stessa riga,
+                // mentre l'indirizzo completo va su una riga separata sotto.
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(address.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        if (address.isDefault) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Star, contentDescription = null, tint = AccentText, modifier = Modifier.size(18.dp))
+                                Text("Predefinito", modifier = Modifier.padding(start = 4.dp), fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
                     Text("${address.street}, ${address.city} ${address.zipCode}")
                 }
-                if (address.isDefault) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFF9800), modifier = Modifier.size(18.dp))
-                        Text("Predefinito", modifier = Modifier.padding(start = 4.dp), fontWeight = FontWeight.SemiBold)
-                    }
-                }
+                // spazio a destra preservato (in caso servano altri elementi in futuro)
+                Spacer(modifier = Modifier.width(8.dp))
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedButton(
                     onClick = onEdit,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)
                 ) {
                     Text("Modifica")
                 }
                 OutlinedButton(
                     onClick = onRemove,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)
                 ) {
                     Text("Rimuovi")
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // rimuoviamo il pulsante "Usa per consegna" e facciamo prendere al
+            // pulsante "Rendi predefinito" tutto lo spazio; inoltre lo coloriamo
+            // con lo stesso colore che aveva prima il pulsante di consegna.
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Button(
-                    onClick = onSelectForDelivery,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text(if (isSelectedForDelivery) "Consegna selezionata" else "Usa per consegna", color = MaterialTheme.colorScheme.onPrimary)
-                    }
-                }
-                OutlinedButton(
                     onClick = onSetDefault,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    contentPadding = PaddingValues(vertical = 12.dp)
                 ) {
-                    Text(if (address.isDefault) "Già predefinito" else "Rendi predefinito")
+                    Text(
+                        text = if (address.isDefault) "Già predefinito" else "Rendi predefinito",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }

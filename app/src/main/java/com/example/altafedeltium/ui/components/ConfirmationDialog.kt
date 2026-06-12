@@ -2,10 +2,12 @@ package com.example.altafedeltium.ui.components
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.example.altafedeltium.ui.theme.AccentText
 
 @Composable
 fun ConfirmationDialog(
@@ -30,7 +32,10 @@ fun ConfirmationDialog(
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
+            OutlinedButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentText)
+            ) {
                 Text(dismissLabel)
             }
         }

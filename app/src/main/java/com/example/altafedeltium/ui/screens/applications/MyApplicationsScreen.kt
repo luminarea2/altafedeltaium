@@ -25,9 +25,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,44 +54,22 @@ fun MyApplicationsScreen(
     // Refresh whenever screen is shown
     LaunchedEffect(Unit) { viewModel.refresh() }
 
-    Scaffold(
-        topBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    IconButton(
-                        onClick = onBack,
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
-                    }
-                    Text(
-                        text = "Le mie Candidature",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Use a simple TopAppBar (same style as OrderHistoryScreen) — navigation icon + title
+        TopAppBar(
+            title = { Text("Le mie Candidature") },
+            navigationIcon = {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                 }
             }
-        }
-    ) { innerPadding ->
+        )
+
         if (uiState.applications.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(
-                        top = innerPadding.calculateTopPadding(),
-                        start = 32.dp,
-                        end = 32.dp,
-                        bottom = innerPadding.calculateBottomPadding()
-                    ),
+                    .padding(start = 32.dp, end = 32.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -118,19 +96,19 @@ fun MyApplicationsScreen(
         } else {
             LazyColumn(
                 contentPadding = PaddingValues(
-                    top = innerPadding.calculateTopPadding() + 8.dp,
-                    bottom = innerPadding.calculateBottomPadding() + 16.dp,
+                    top = 8.dp,
+                    bottom = 16.dp,
                     start = 16.dp,
                     end = 16.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
-                    Text(
-                        text = "Hai ${uiState.applications.size} candidatura${if (uiState.applications.size == 1) "" else "e"} attiva${if (uiState.applications.size == 1) "" else "e"}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
+                        Text(
+                            text = "Hai ${uiState.applications.size} candidature attive",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
                 }
                 items(uiState.applications, key = { it.id }) { application ->
                     ApplicationStatusCard(application = application)
@@ -171,7 +149,7 @@ private fun ApplicationStatusCard(application: JobApplication) {
                     Text(
                         text = application.position.company,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+                        color = com.example.altafedeltium.ui.theme.AccentText
                     )
                 }
                 Icon(
@@ -264,4 +242,3 @@ private fun statusVisuals(status: ApplicationStatus): StatusVisuals {
         )
     }
 }
-

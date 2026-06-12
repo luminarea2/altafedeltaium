@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Videocam
@@ -36,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import com.example.altafedeltium.ui.theme.AccentText
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -77,9 +79,7 @@ fun VideoRecorderPanel(
                 countdownSeconds = uiState.videoCountdownSeconds,
                 onStop = viewModel::onStopRecordingManually
             )
-            VideoRecordingState.RECORDED -> RecordedVideoPanel(
-                onRetake = viewModel::onRetakeVideo
-            )
+            VideoRecordingState.RECORDED -> RecordedVideoPanel(viewModel = viewModel)
         }
     }
 }
@@ -263,8 +263,37 @@ private fun RecordingVideoPanel(
 // ──────────────────────────────────────────────
 
 @Composable
-private fun RecordedVideoPanel(onRetake: () -> Unit) {
-    // Success confirmation card
+private fun RecordedVideoPanel(viewModel: ApplicationViewModel) {
+    val uiState by viewModel.uiState
+    val onRetake = viewModel::onRetakeVideo
+
+    if (uiState.videoAccepted) {
+        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)), modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(52.dp))
+                    Text("Video registrato! 🎉", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                    Text(
+                        "Ottimo lavoro! Il tuo video di presentazione è pronto per essere inviato insieme alla candidatura.",
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFF388E3C)
+                    )
+                }
+            }
+
+            // Allow user to change their mind and re-record after accepting
+            OutlinedButton(
+                onClick = onRetake,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Registra di nuovo")
+            }
+        }
+        return
+    }
+
+    // Keep the same short confirmation header
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
         modifier = Modifier.fillMaxWidth()
@@ -289,7 +318,7 @@ private fun RecordedVideoPanel(onRetake: () -> Unit) {
                 color = Color(0xFF2E7D32)
             )
             Text(
-                "Ottimo lavoro! Il tuo video di presentazione è pronto per essere inviato insieme alla candidatura.",
+                "Ottimo lavoro! Il tuo video è pronto.",
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,
                 color = Color(0xFF388E3C)
@@ -297,26 +326,46 @@ private fun RecordedVideoPanel(onRetake: () -> Unit) {
         }
     }
 
-    // Retake option
-    OutlinedButton(
-        onClick = onRetake,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text("🔄  Non mi piace, registro di nuovo")
-    }
+    // Prompt acceptance controls under the (mock) video
+    if (uiState.videoAwaitingUploadConfirmation) {
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Vuoi caricare il video?", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(onClick = { viewModel.onRejectVideo() }) {
+                        Icon(Icons.Default.Close, contentDescription = null, tint = AccentText)
+                        Text("  Rifiuta", color = AccentText)
+                    }
+                    Button(onClick = { viewModel.onAcceptVideo() }) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null)
+                        Text("  Accetta")
+                    }
+                }
+            }
+        }
+    } else {
+        // Retake option
+        OutlinedButton(
+            onClick = onRetake,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("🔄  Non mi piace, registro di nuovo")
+        }
 
-    // Nudge to proceed
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
-    ) {
-        Text(
-                text = "💪 Sei pronto! Clicca \"Invia Candidatura\" per completare il processo.",
-            modifier = Modifier.padding(12.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
-        )
+        // Nudge to proceed
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Text(
+                text = "Sei pronto! Clicca \"Invia Candidatura\" per completare il processo.",
+                modifier = Modifier.padding(12.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
     }
 }
 

@@ -22,7 +22,7 @@ import java.util.Locale
 
 data class HomeUiState(
     val products: List<Product> = ProductMockData.products,
-    val selectedCategory: String = "Tutti",
+    val selectedCategories: Set<String> = setOf("Tutti"),
     val searchQuery: String = "",
     val maxPriceFilter: Double = ProductMockData.products.maxOfOrNull { it.price } ?: 0.0,
     val selectedSortField: SortField = SortField.NAME,
@@ -135,7 +135,8 @@ data class HomeUiState(
         firstName = "Paolo",
         lastName = "Cortellesi",
         email = "paolo.cortellesi@email.it",
-        phone = "3331234567",
+        // default phone must be empty: do not show placeholder/sample number in profile until user fills it
+        phone = "",
         username = "Paolo123",
         loyaltyCode = "AF-10293-PA",
         memberSince = "Feb 2024"
@@ -154,7 +155,29 @@ class HomeViewModel : ViewModel() {
         get() = _uiState.value.products.maxOfOrNull { it.price } ?: 0.0
 
     fun onCategorySelected(category: String) {
-        _uiState.value = _uiState.value.copy(selectedCategory = category)
+        val current = _uiState.value.selectedCategories.toMutableSet()
+        
+        if (category == "Tutti") {
+            // Se seleziona "Tutti", deseleziona tutte le altre
+            _uiState.value = _uiState.value.copy(selectedCategories = setOf("Tutti"))
+        } else {
+            // Se era selezionato il "Tutti", rimuovilo
+            if (current.contains("Tutti")) {
+                current.remove("Tutti")
+            }
+            
+            // Toggle della categoria selezionata
+            if (current.contains(category)) {
+                current.remove(category)
+                // Se rimane vuoto, seleziona "Tutti"
+                if (current.isEmpty()) {
+                    current.add("Tutti")
+                }
+            } else {
+                current.add(category)
+            }
+            _uiState.value = _uiState.value.copy(selectedCategories = current)
+        }
     }
 
     fun onSearchQueryChanged(query: String) {
@@ -173,10 +196,21 @@ class HomeViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(selectedSortDirection = direction)
     }
 
+    fun resetFilters() {
+        _uiState.value = _uiState.value.copy(
+            selectedCategories = setOf("Tutti"),
+            searchQuery = "",
+            maxPriceFilter = maxPriceLimit,
+            selectedSortField = SortField.NAME,
+            selectedSortDirection = SortDirection.ASC
+        )
+    }
+
     fun filteredProducts(): List<Product> {
         val current = _uiState.value
         val filtered = current.products.filter { product ->
-            val matchesCategory = current.selectedCategory == "Tutti" || product.category == current.selectedCategory
+            val matchesCategory = current.selectedCategories.contains("Tutti") || 
+                current.selectedCategories.contains(product.category)
             val matchesQuery = current.searchQuery.isBlank() ||
                 product.name.contains(current.searchQuery, ignoreCase = true)
             val matchesPrice = product.price <= current.maxPriceFilter
@@ -576,6 +610,13 @@ class HomeViewModel : ViewModel() {
                 phone = phone
             )
         )
+
+        // Persist the change to the authenticated session store if a user is logged in
+        try {
+            AuthSessionStore.updateCurrentUser(firstName = firstName, lastName = lastName, email = email, phone = phone)
+        } catch (_: Exception) {
+            // Non fatale: se lo store non è inizializzato o non c'è un utente corrente, ignoriamo
+        }
     }
 
     fun syncProfileFromAuthenticatedUser(fullName: String, email: String) {
@@ -585,12 +626,16 @@ class HomeViewModel : ViewModel() {
         val lastName = parts.drop(1).joinToString(" ").ifBlank { "-" }
         val username = email.substringBefore("@").ifBlank { firstName }
 
+        // Try to get phone from AuthSessionStore if present
+        val phone = try { AuthSessionStore.currentUser?.phone ?: "" } catch (_: Exception) { "" }
+
         _uiState.value = _uiState.value.copy(
             userProfile = _uiState.value.userProfile.copy(
                 firstName = firstName,
                 lastName = lastName,
                 email = email.trim().lowercase(Locale.ITALIAN),
-                username = username
+                username = username,
+                phone = phone
             )
         )
     }
@@ -623,6 +668,16 @@ class HomeViewModel : ViewModel() {
             cartItems = emptyList()
         )
         return true
+    }
+
+    /**
+     * Clear user-specific transient state (used on logout).
+     * Currently clears the cart so a new user won't see the previous user's items.
+     */
+    fun clearSession() {
+        _uiState.value = _uiState.value.copy(
+            cartItems = emptyList()
+        )
     }
 }
 

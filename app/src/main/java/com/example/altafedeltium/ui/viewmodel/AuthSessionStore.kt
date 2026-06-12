@@ -8,7 +8,8 @@ data class AuthUser(
     val firstName: String,
     val lastName: String,
     val email: String,
-    val password: String
+    val password: String,
+    val phone: String = ""
 ) {
     val fullName: String get() = "$firstName $lastName"
 }
@@ -22,7 +23,8 @@ object AuthSessionStore {
         firstName = "Paolo",
         lastName = "Cortellesi",
         email = "paolo.cortellesi@email.it",
-        password = "password123"
+        password = "password123",
+        phone = ""
     )
 
     private val users = mutableListOf(
@@ -42,7 +44,13 @@ object AuthSessionStore {
     var currentUser: AuthUser? = null
         private set
 
-    fun register(firstName: String, lastName: String, email: String, password: String): Result<AuthUser> {
+    fun register(
+        firstName: String,
+        lastName: String,
+        email: String,
+        password: String,
+        phone: String = ""
+    ): Result<AuthUser> {
         val normalizedEmail = email.trim().lowercase()
         if (users.any { it.email.equals(normalizedEmail, ignoreCase = true) }) {
             return Result.failure(IllegalArgumentException("Esiste gia un account con questa email"))
@@ -52,7 +60,8 @@ object AuthSessionStore {
             firstName = firstName.trim(),
             lastName = lastName.trim(),
             email = normalizedEmail,
-            password = password
+            password = password,
+            phone = phone.trim()
         )
         users.add(user)
         currentUser = user
@@ -89,8 +98,17 @@ object AuthSessionStore {
                 val lastName = item.optString("lastName").trim()
                 val email = item.optString("email").trim().lowercase()
                 val password = item.optString("password")
+                val phone = item.optString("phone", "").trim()
                 if (firstName.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
-                    users.add(AuthUser(firstName = firstName, lastName = lastName, email = email, password = password))
+                    users.add(
+                        AuthUser(
+                            firstName = firstName,
+                            lastName = lastName,
+                            email = email,
+                            password = password,
+                            phone = phone
+                        )
+                    )
                 }
             }
         }
@@ -115,6 +133,7 @@ object AuthSessionStore {
                     .put("lastName", user.lastName)
                     .put("email", user.email)
                     .put("password", user.password)
+                    .put("phone", user.phone)
             )
         }
 
@@ -123,5 +142,33 @@ object AuthSessionStore {
             .putString(KEY_CURRENT_USER_EMAIL, currentUser?.email)
             .apply()
     }
-}
 
+    /**
+     * Aggiorna i dati dell'utente corrente (se presente) e persiste lo stato.
+     */
+    fun updateCurrentUser(firstName: String, lastName: String, email: String, phone: String = "") {
+        val existing = currentUser ?: return
+        val updated = AuthUser(
+            firstName = firstName.trim(),
+            lastName = lastName.trim(),
+            email = email.trim().lowercase(),
+            password = existing.password,
+            phone = phone.trim()
+        )
+
+        // Replace in users list
+        val index = users.indexOfFirst { it.email.equals(existing.email, ignoreCase = true) }
+        if (index >= 0) {
+            users[index] = updated
+        } else {
+            users.add(updated)
+        }
+        currentUser = updated
+        persistState()
+    }
+
+    fun updateCurrentUserPhone(phone: String) {
+        val existing = currentUser ?: return
+        updateCurrentUser(existing.firstName, existing.lastName, existing.email, phone)
+    }
+}
