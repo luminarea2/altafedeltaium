@@ -21,6 +21,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import com.example.altafedeltium.ui.components.ConfirmationDialog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -33,6 +37,10 @@ fun CartScreen(
 ) {
     val uiState by homeViewModel.uiState
     val cartItems = uiState.cartItems
+    // Stato per dialog di conferma rimozione
+    var showRemoveDialog by rememberSaveable { mutableStateOf(false) }
+    var pendingRemoveProductId by rememberSaveable { mutableStateOf<Int?>(null) }
+    var pendingRemoveProductName by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
         bottomBar = {
@@ -129,7 +137,16 @@ fun CartScreen(
                             }
                             
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = { homeViewModel.decreaseQuantity(item.product.id) }) {
+                                    IconButton(onClick = {
+                                        // Se la quantità dopo il decremento diventerebbe 0 chiediamo conferma
+                                        if (item.quantity <= 1) {
+                                            pendingRemoveProductId = item.product.id
+                                            pendingRemoveProductName = item.product.name
+                                            showRemoveDialog = true
+                                        } else {
+                                            homeViewModel.decreaseQuantity(item.product.id)
+                                        }
+                                    }) {
                                     Icon(Icons.Default.Remove, contentDescription = "Diminuisci")
                                 }
                                 Text(
@@ -146,6 +163,28 @@ fun CartScreen(
                 }
             }
         }
+    }
+
+    // Dialog di conferma rimozione prodotto
+    if (showRemoveDialog) {
+        ConfirmationDialog(
+            title = "Rimuovi prodotto",
+            message = "Sei sicuro di voler rimuovere \"${pendingRemoveProductName}\" dal carrello?",
+            confirmLabel = "Rimuovi",
+            dismissLabel = "Annulla",
+            destructiveConfirm = true,
+            onConfirm = {
+                pendingRemoveProductId?.let { id -> homeViewModel.removeFromCart(id) }
+                showRemoveDialog = false
+                pendingRemoveProductId = null
+                pendingRemoveProductName = ""
+            },
+            onDismiss = {
+                showRemoveDialog = false
+                pendingRemoveProductId = null
+                pendingRemoveProductName = ""
+            }
+        )
     }
 }
 

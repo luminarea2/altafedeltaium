@@ -36,6 +36,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.altafedeltium.ui.components.ConfirmationDialog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +63,8 @@ fun FavoritesScreen(
     onDecreaseQuantity: (Int) -> Unit,
     cartQuantityFor: (Int) -> Int
 ) {
+    var productToRemove by remember { mutableStateOf<Product?>(null) }
+
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text("Preferiti") },
@@ -94,11 +101,28 @@ fun FavoritesScreen(
                         onIncreaseQuantity = { onIncreaseQuantity(product.id) },
                         onDecreaseQuantity = { onDecreaseQuantity(product.id) },
                         cartQuantity = cartQuantity,
-                        onRemove = { onRemoveFavorite(product.id) }
+                        // Instead of removing immediately, show a confirmation dialog
+                        onRemove = { productToRemove = product }
                     )
                 }
             }
         }
+    }
+
+    // Confirmation dialog to remove a product from favorites
+    productToRemove?.let { p ->
+        ConfirmationDialog(
+            title = "Rimuovi preferito",
+            message = "Sei sicuro di voler rimuovere \"${p.name}\" dai preferiti?",
+            confirmLabel = "Rimuovi",
+            dismissLabel = "Annulla",
+            onConfirm = {
+                onRemoveFavorite(p.id)
+                productToRemove = null
+            },
+            onDismiss = { productToRemove = null },
+            destructiveConfirm = true
+        )
     }
 }
 
