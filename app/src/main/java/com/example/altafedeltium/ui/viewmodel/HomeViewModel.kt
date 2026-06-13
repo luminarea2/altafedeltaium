@@ -520,6 +520,17 @@ class HomeViewModel : ViewModel() {
         return true
     }
 
+    fun removePaymentCard(cardId: Int) {
+        val remaining = _uiState.value.paymentCards.filterNot { it.id == cardId }
+        val selected = _uiState.value.selectedPaymentCardId
+        val newSelected = when {
+            selected == null -> null
+            selected == cardId -> remaining.firstOrNull()?.id
+            else -> selected
+        }
+        _uiState.value = _uiState.value.copy(paymentCards = remaining, selectedPaymentCardId = newSelected)
+    }
+
     @Suppress("unused")
     private fun addAddress(label: String, street: String, city: String, zipCode: String) {
         addAddressWithCoordinates(

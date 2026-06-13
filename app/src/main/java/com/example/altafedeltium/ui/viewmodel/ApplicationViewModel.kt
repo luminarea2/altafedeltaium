@@ -89,9 +89,10 @@ class ApplicationViewModel : ViewModel() {
         }
         val phoneError = when {
             s.phone.isBlank() -> "Il numero di telefono è necessario, ti contatteremo lì!"
-            s.phone.replace(" ", "").replace("+", "").length < 9 ->
-                "Controlla il numero: deve avere almeno 9 cifre"
-            else -> null
+            else -> {
+                val digits = s.phone.filter { it.isDigit() }
+                if (digits.length != 10) "Il numero di telefono deve contenere esattamente 10 cifre" else null
+            }
         }
         val emailError = when {
             s.email.isBlank() -> "Inserisci la tua email per ricevere aggiornamenti"

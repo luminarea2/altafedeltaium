@@ -47,6 +47,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import com.example.altafedeltium.ui.utils.showTimedSnackbar
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,14 +79,18 @@ fun HomeScreen(
 ) {
     val uiState by homeViewModel.uiState
     val filteredProducts = homeViewModel.filteredProducts()
+    val snackbarHostState = remember { SnackbarHostState() }
+    // track previous quantities to detect first-add and full-remove
+    val prevQuantities = remember { mutableStateMapOf<Int, Int>() }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 8.dp)
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
         item {
             HomeHeaderCard(
                 favoritesCount = uiState.favoriteProductIds.size,
@@ -120,6 +130,27 @@ fun HomeScreen(
                 onDecreaseQuantity = { homeViewModel.decreaseQuantity(product.id) }
             )
         }
+    }
+
+        // snackbar host overlay
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+
+    // observe cart items map changes and show snackbar only on 0->>0 (first add) and >0->0 (removed)
+    LaunchedEffect(Unit) {
+        snapshotFlow { uiState.cartItems.associate { it.product.id to it.quantity } }
+            .collect { currentMap ->
+                for (product in filteredProducts) {
+                    val prev = prevQuantities[product.id] ?: 0
+                    val curr = currentMap[product.id] ?: 0
+                    if (prev == 0 && curr > 0) {
+                        snackbarHostState.showTimedSnackbar("✓ Prodotto aggiunto al carrello!")
+                    } else if (prev > 0 && curr == 0) {
+                        snackbarHostState.showTimedSnackbar("✓ Prodotto rimosso dal carrello")
+                    }
+                    prevQuantities[product.id] = curr
+                }
+            }
     }
 }
 

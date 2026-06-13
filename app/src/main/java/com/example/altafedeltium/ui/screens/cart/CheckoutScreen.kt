@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Delete
 import com.example.altafedeltium.ui.components.MapPickerDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -296,7 +297,8 @@ fun CheckoutScreen(
                         CardListSection(
                             cards = uiState.paymentCards,
                             selectedCardId = selectedCard?.id,
-                            onSelectCard = homeViewModel::setSelectedPaymentCard
+                            onSelectCard = homeViewModel::setSelectedPaymentCard,
+                            onRemoveCard = homeViewModel::removePaymentCard
                         )
                         OutlinedButton(
                             onClick = { showAddCardForm = !showAddCardForm },
@@ -715,8 +717,10 @@ private fun DeliveryDaySection(
 private fun CardListSection(
     cards: List<PaymentCard>,
     selectedCardId: Int?,
-    onSelectCard: (Int) -> Unit
+    onSelectCard: (Int) -> Unit,
+    onRemoveCard: (Int) -> Unit
 ) {
+    var cardToRemove by remember { mutableStateOf<PaymentCard?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         cards.forEach { card ->
             Card(modifier = Modifier.fillMaxWidth()) {
@@ -730,13 +734,32 @@ private fun CardListSection(
                         selected = selectedCardId == card.id,
                         onClick = { onSelectCard(card.id) }
                     )
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text("${card.brand} ****${card.last4}", fontWeight = FontWeight.SemiBold)
                         Text("${card.holderName} - Scad. ${card.expiry}", style = MaterialTheme.typography.bodySmall)
+                    }
+                    // red trash icon to remove card
+                    IconButton(onClick = { cardToRemove = card }) {
+                        Icon(imageVector = Icons.Default.Delete, contentDescription = "Rimuovi carta", tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
         }
+    }
+
+    cardToRemove?.let { card ->
+        ConfirmationDialog(
+            title = "Rimuovi carta",
+            message = "Sei sicuro di voler rimuovere la carta ${card.brand} ****${card.last4}?",
+            confirmLabel = "Rimuovi",
+            dismissLabel = "Annulla",
+            onConfirm = {
+                onRemoveCard(card.id)
+                cardToRemove = null
+            },
+            onDismiss = { cardToRemove = null },
+            destructiveConfirm = true
+        )
     }
 }
 
@@ -752,6 +775,8 @@ private fun AddAddressForm(
     onZipCodeChange: (String) -> Unit,
     onSave: (Double?, Double?) -> Unit
 ) {
+    var zipError by remember { mutableStateOf<String?>(null) }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Nuovo indirizzo", style = MaterialTheme.typography.titleMedium)
@@ -793,9 +818,11 @@ private fun AddAddressForm(
             )
             OutlinedTextField(
                 value = zipCode,
-                onValueChange = onZipCodeChange,
+                onValueChange = { onZipCodeChange(it); zipError = null },
                 label = { Text("CAP") },
                 modifier = Modifier.fillMaxWidth(),
+                isError = zipError != null,
+                supportingText = { zipError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
                     cursorColor = com.example.altafedeltium.ui.theme.AccentText,
@@ -835,8 +862,14 @@ private fun AddAddressForm(
                 Text("Entrata impostata: ${"%.5f".format(lat)} , ${"%.5f".format(lon)}", modifier = Modifier.padding(top = 4.dp))
             }
             Button(
-                onClick = { onSave(pickedLat, pickedLon) },
-                enabled = label.isNotBlank() && street.isNotBlank() && city.isNotBlank() && zipCode.length >= 5,
+                onClick = {
+                    val zErr = if (!zipCode.matches(Regex("^\\d{5}$"))) "Il CAP deve essere composto da 5 cifre" else null
+                    zipError = zErr
+                    if (label.isNotBlank() && street.isNotBlank() && city.isNotBlank() && zErr == null) {
+                        onSave(pickedLat, pickedLon)
+                    }
+                },
+                enabled = label.isNotBlank() && street.isNotBlank() && city.isNotBlank() && zipCode.matches(Regex("^\\d{5}$")),
                 modifier = Modifier.fillMaxWidth(),
                 colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {

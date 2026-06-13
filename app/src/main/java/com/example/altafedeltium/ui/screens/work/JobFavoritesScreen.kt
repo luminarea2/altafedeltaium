@@ -17,11 +17,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
 import com.example.altafedeltium.data.model.JobPosition
+import com.example.altafedeltium.ui.components.ConfirmationDialog
 import com.example.altafedeltium.ui.components.JobCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +38,7 @@ fun JobFavoritesScreen(
     onToggleFavorite: (Int) -> Unit,
     onApply: (Int) -> Unit
 ) {
+    var jobToRemove by remember { mutableStateOf<JobPosition?>(null) }
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text("Offerte Salvate") },
@@ -66,11 +72,26 @@ fun JobFavoritesScreen(
                         position = job,
                         onApply = { onApply(job.id) },
                         isFavorite = true,
-                        onToggleFavorite = { onToggleFavorite(job.id) }
+                        onToggleFavorite = { jobToRemove = job }
                     )
                 }
             }
         }
+    }
+
+    jobToRemove?.let { j ->
+        ConfirmationDialog(
+            title = "Rimuovi offerta salvata",
+            message = "Sei sicuro di voler rimuovere \"${j.title}\" dai salvati?",
+            confirmLabel = "Rimuovi",
+            dismissLabel = "Annulla",
+            onConfirm = {
+                onToggleFavorite(j.id)
+                jobToRemove = null
+            },
+            onDismiss = { jobToRemove = null },
+            destructiveConfirm = true
+        )
     }
 }
 

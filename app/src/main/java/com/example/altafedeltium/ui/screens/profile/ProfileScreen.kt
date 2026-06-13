@@ -33,7 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarDuration
+import com.example.altafedeltium.ui.utils.showTimedSnackbar
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -46,6 +46,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.example.altafedeltium.ui.components.ConfirmationDialog
 import com.example.altafedeltium.ui.components.MapPickerDialog
+import com.example.altafedeltium.ui.viewmodel.validateEmail
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -192,7 +193,7 @@ fun ProfileScreen(
     // show a small snackbar (same style used when adding a product to cart) after save
     LaunchedEffect(showProfileSavedDialog) {
         if (showProfileSavedDialog) {
-            snackbarHostState.showSnackbar("✓ Dati aggiornati correttamente!", duration = SnackbarDuration.Short)
+            snackbarHostState.showTimedSnackbar("✓ Dati aggiornati correttamente!")
             showProfileSavedDialog = false
         }
     }
@@ -373,6 +374,8 @@ private fun PersonalDataSection(
     var editedLastName by remember(lastName) { mutableStateOf(lastName) }
     var editedEmail by remember(email) { mutableStateOf(email) }
     var editedPhone by remember(phone) { mutableStateOf(phone) }
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var phoneError by remember { mutableStateOf<String?>(null) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -414,9 +417,11 @@ private fun PersonalDataSection(
             )
             OutlinedTextField(
                 value = editedEmail,
-                onValueChange = { editedEmail = it },
+                onValueChange = { editedEmail = it; emailError = null },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Email") },
+                isError = emailError != null,
+                supportingText = { emailError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
                     cursorColor = AccentText,
@@ -426,9 +431,11 @@ private fun PersonalDataSection(
             )
             OutlinedTextField(
                 value = editedPhone,
-                onValueChange = { editedPhone = it },
+                onValueChange = { editedPhone = it; phoneError = null },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Telefono") },
+                isError = phoneError != null,
+                supportingText = { phoneError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
                     cursorColor = AccentText,
@@ -460,10 +467,26 @@ private fun PersonalDataSection(
             }
 
             Button(
-                onClick = { onSave(editedFirstName, editedLastName, editedEmail, editedPhone) },
+                onClick = {
+                    // validate fields
+                    val fnError = if (editedFirstName.isBlank()) "Inserisci il nome" else null
+                    val lnError = if (editedLastName.isBlank()) "Inserisci il cognome" else null
+                    val eError = validateEmail(editedEmail)
+                    val pError = when {
+                        editedPhone.isBlank() -> null // allowed to be empty
+                        !editedPhone.matches(Regex("^\\d{10}$")) -> "Il telefono deve contenere esattamente 10 cifre"
+                        else -> null
+                    }
+                    emailError = eError
+                    phoneError = pError
+
+                    if (fnError == null && lnError == null && eError == null && pError == null) {
+                        onSave(editedFirstName, editedLastName, editedEmail, editedPhone)
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                // allow saving profile even if phone is still empty
-                enabled = editedFirstName.isNotBlank() && editedLastName.isNotBlank() && editedEmail.isNotBlank()
+                // allow saving profile only if mandatory fields are filled and email valid
+                enabled = editedFirstName.isNotBlank() && editedLastName.isNotBlank() && validateEmail(editedEmail) == null
             ) {
                 Text("Salva modifiche")
             }
@@ -571,6 +594,7 @@ private fun AddressEditorCard(
     var latitude by remember(initialAddress?.id) { mutableStateOf(initialAddress?.latitude) }
     var longitude by remember(initialAddress?.id) { mutableStateOf(initialAddress?.longitude) }
     var showMapPicker by remember { mutableStateOf(false) }
+    var zipError by remember { mutableStateOf<String?>(null) }
 
     if (showMapPicker) {
         MapPickerDialog(
@@ -606,7 +630,15 @@ private fun AddressEditorCard(
             OutlinedTextField(value = label, onValueChange = { label = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Etichetta") }, colors = OutlinedTextFieldDefaults.colors(cursorColor = AccentText, focusedBorderColor = AccentText, focusedLabelColor = AccentText))
             OutlinedTextField(value = street, onValueChange = { street = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Via e numero civico") }, colors = OutlinedTextFieldDefaults.colors(cursorColor = AccentText, focusedBorderColor = AccentText, focusedLabelColor = AccentText))
             OutlinedTextField(value = city, onValueChange = { city = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Città") }, colors = OutlinedTextFieldDefaults.colors(cursorColor = AccentText, focusedBorderColor = AccentText, focusedLabelColor = AccentText))
-            OutlinedTextField(value = zipCode, onValueChange = { zipCode = it }, modifier = Modifier.fillMaxWidth(), label = { Text("CAP") }, colors = OutlinedTextFieldDefaults.colors(cursorColor = AccentText, focusedBorderColor = AccentText, focusedLabelColor = AccentText))
+            OutlinedTextField(
+                value = zipCode,
+                onValueChange = { zipCode = it; zipError = null },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("CAP") },
+                isError = zipError != null,
+                supportingText = { zipError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                colors = OutlinedTextFieldDefaults.colors(cursorColor = AccentText, focusedBorderColor = AccentText, focusedLabelColor = AccentText)
+            )
 
             OutlinedButton(
                 onClick = { showMapPicker = true },
@@ -638,8 +670,14 @@ private fun AddressEditorCard(
             }
 
             Button(
-                onClick = { onSave(label, street, city, zipCode, latitude, longitude) },
-                enabled = label.isNotBlank() && street.isNotBlank() && city.isNotBlank() && zipCode.isNotBlank(),
+                onClick = {
+                    val zErr = if (!zipCode.matches(Regex("^\\d{5}$"))) "Il CAP deve essere composto da 5 cifre" else null
+                    zipError = zErr
+                    if (label.isNotBlank() && street.isNotBlank() && city.isNotBlank() && zErr == null) {
+                        onSave(label, street, city, zipCode, latitude, longitude)
+                    }
+                },
+                enabled = label.isNotBlank() && street.isNotBlank() && city.isNotBlank() && zipCode.matches(Regex("^\\d{5}$")),
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {

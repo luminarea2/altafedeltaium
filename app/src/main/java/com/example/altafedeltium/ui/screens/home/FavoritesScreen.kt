@@ -40,7 +40,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import com.example.altafedeltium.ui.components.ConfirmationDialog
+import com.example.altafedeltium.ui.utils.showTimedSnackbar
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,9 +70,31 @@ fun FavoritesScreen(
     cartQuantityFor: (Int) -> Int
 ) {
     var productToRemove by remember { mutableStateOf<Product?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    var isAddingToCart by remember { mutableStateOf(false) }
+    // track previous quantities for favorites to show add/remove messages
+    val prevQuantities = remember { mutableStateMapOf<Int, Int>() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
+    // observe cart quantities for favorite products
+    LaunchedEffect(Unit) {
+        snapshotFlow { favorites.map { it.id to cartQuantityFor(it.id) }.toMap() }
+            .collect { currentMap ->
+                for (product in favorites) {
+                    val prev = prevQuantities[product.id] ?: 0
+                    val curr = currentMap[product.id] ?: 0
+                    if (prev == 0 && curr > 0) {
+                        snackbarHostState.showTimedSnackbar("✓ Prodotto aggiunto al carrello!")
+                    } else if (prev > 0 && curr == 0) {
+                        snackbarHostState.showTimedSnackbar("✓ Prodotto rimosso dal carrello")
+                    }
+                    prevQuantities[product.id] = curr
+                }
+            }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            TopAppBar(
             title = { Text("Preferiti") },
             navigationIcon = {
                 IconButton(onClick = onBack) {
@@ -97,7 +125,7 @@ fun FavoritesScreen(
                     FavoriteProductCard(
                         product = product,
                         onOpen = { onOpenProduct(product.id) },
-                        onAddToCart = { onAddToCart(product) },
+                        onAddToCart = { onAddToCart(product); isAddingToCart = true },
                         onIncreaseQuantity = { onIncreaseQuantity(product.id) },
                         onDecreaseQuantity = { onDecreaseQuantity(product.id) },
                         cartQuantity = cartQuantity,
@@ -107,6 +135,11 @@ fun FavoritesScreen(
                 }
             }
         }
+
+        }
+
+        // snackbar overlay placed in the Box scope so Modifier.align works
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 
     // Confirmation dialog to remove a product from favorites
@@ -123,6 +156,13 @@ fun FavoritesScreen(
             onDismiss = { productToRemove = null },
             destructiveConfirm = true
         )
+    }
+
+    LaunchedEffect(isAddingToCart) {
+            if (isAddingToCart) {
+                snackbarHostState.showTimedSnackbar("✓ Prodotto aggiunto al carrello!")
+                isAddingToCart = false
+            }
     }
 }
 

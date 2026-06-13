@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import com.example.altafedeltium.ui.utils.showTimedSnackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -57,6 +58,10 @@ fun ProductDetailScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val isAddingToCart = remember { mutableStateOf(value = false) }
+    // track previous cart quantity to show removal message when quantity goes 1->0
+    val prevQuantity = remember { mutableStateOf(cartQuantity) }
+    // remember previous favorite state to show feedback when toggled
+    val previousFavorite = remember { mutableStateOf(isFavorite) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -117,10 +122,12 @@ fun ProductDetailScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 if (cartQuantity <= 0) {
                     Button(
-                        onClick = {
-                            onAddToCart(product)
-                            isAddingToCart.value = true
-                        },
+                                onClick = {
+                                            // only show add-to-cart snackbar if product was not already in cart
+                                            val wasInCart = cartQuantity > 0
+                                            onAddToCart(product)
+                                            if (!wasInCart) isAddingToCart.value = true
+                                        },
                         enabled = product.stock > 0,
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -162,8 +169,28 @@ fun ProductDetailScreen(
             // Show snackbar message when item is added
             LaunchedEffect(isAddingToCart.value) {
                 if (isAddingToCart.value) {
-                    snackbarHostState.showSnackbar("✓ Prodotto aggiunto al carrello!")
+                    snackbarHostState.showTimedSnackbar("✓ Prodotto aggiunto al carrello!")
                     isAddingToCart.value = false
+                }
+            }
+
+            // detect removal from cart (quantity 1->0)
+            LaunchedEffect(cartQuantity) {
+                if (prevQuantity.value > 0 && cartQuantity == 0) {
+                    snackbarHostState.showTimedSnackbar("✓ Prodotto rimosso dal carrello")
+                }
+                prevQuantity.value = cartQuantity
+            }
+
+            // Show snackbar when favorite status changes (added/removed)
+            LaunchedEffect(isFavorite) {
+                if (isFavorite != previousFavorite.value) {
+                    if (isFavorite) {
+                        snackbarHostState.showTimedSnackbar("✓ Aggiunto ai preferiti")
+                    } else {
+                        snackbarHostState.showTimedSnackbar("✓ Rimosso dai preferiti")
+                    }
+                    previousFavorite.value = isFavorite
                 }
             }
         }
